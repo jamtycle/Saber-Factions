@@ -13,9 +13,8 @@ public abstract class Factions {
     }
 
     private static Factions getFactionsImpl() {
-        switch (Conf.backEnd) {
-            case JSON:
-                return new JSONFactions();
+        if (Conf.backEnd == Conf.Backend.JSON) {
+            return new JSONFactions();
         }
         return null;
     }

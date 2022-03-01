@@ -105,11 +105,7 @@ public class StartupParameter {
     }
 
     public static void populateConfSets() {
-        if (FactionsPlugin.getInstance().version == 17) {
-            safeZoneNerfedCreatureTypes.add(EntityType.GLOW_SQUID);
-            safeZoneNerfedCreatureTypes.add(EntityType.AXOLOTL);
-            safeZoneNerfedCreatureTypes.add(EntityType.ZOMBIFIED_PIGLIN);
-        } else if (FactionsPlugin.getInstance().version == 16) {
+        if (FactionsPlugin.getInstance().version == 16) {
             safeZoneNerfedCreatureTypes.add(EntityType.ZOMBIFIED_PIGLIN);
         } else {
             safeZoneNerfedCreatureTypes.add(EntityType.valueOf("PIG_ZOMBIE"));
