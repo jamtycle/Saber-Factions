@@ -11,7 +11,7 @@ import com.massivecraft.factions.zcore.util.TL;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.message.priv.react.PrivateMessageReactionAddEvent;
+//import net.dv8tion.jda.api.events.message.priv.react.PrivateMessageReactionAddEvent;
 import org.bukkit.ChatColor;
 
 import java.util.concurrent.TimeUnit;
@@ -70,14 +70,14 @@ public class CmdSetGuild extends FCommand {
                     user.openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessage("Link guild **" + finalGuild1.getName() + "** to faction **" + ChatColor.stripColor(faction.getTag()) + "**?").queue((message) -> {
                         String checkMark = "✅";
                         message.addReaction(checkMark).queue();
-                        this.eventWaiter.waitForEvent(PrivateMessageReactionAddEvent.class, (event) -> event.getReactionEmote().getName().equals(checkMark) && event.getUser().getId().equals(user.getId()) && event.getMessageId().equals(message.getId()), (event) -> {
-                            faction.setGuildId(context.argAsString(0));
-                            context.msg(TL.SET_GUILD_ID_SUCCESS);
-                            privateChannel.sendMessage("Successfully linked **" + finalGuild.getName() + " & " + ChatColor.stripColor(faction.getTag()) + "**").queue();
-                        }, 15L, TimeUnit.SECONDS, () -> {
-                            privateChannel.sendMessage(TL.SET_GUILD_ID_TIMED_OUT_DISCORD.toString()).queue();
-                            context.msg(TL.SET_GUILD_ID_TIMED_OUT_MINECRAFT);
-                        });
+//                        this.eventWaiter.waitForEvent(PrivateMessageReactionAddEvent.class, (event) -> event.getReactionEmote().getName().equals(checkMark) && event.getUser().getId().equals(user.getId()) && event.getMessageId().equals(message.getId()), (event) -> {
+//                            faction.setGuildId(context.argAsString(0));
+//                            context.msg(TL.SET_GUILD_ID_SUCCESS);
+//                            privateChannel.sendMessage("Successfully linked **" + finalGuild.getName() + " & " + ChatColor.stripColor(faction.getTag()) + "**").queue();
+//                        }, 15L, TimeUnit.SECONDS, () -> {
+//                            privateChannel.sendMessage(TL.SET_GUILD_ID_TIMED_OUT_DISCORD.toString()).queue();
+//                            context.msg(TL.SET_GUILD_ID_TIMED_OUT_MINECRAFT);
+//                        });
                     }, (t) -> context.msg(TL.SET_GUILD_ID_UNABLE_TO_MESSAGE_GUILD_OWNER)), (t) -> context.msg(TL.SET_GUILD_ID_UNABLE_TO_MESSAGE_GUILD_OWNER));
                 }
             } else {

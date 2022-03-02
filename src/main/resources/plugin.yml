@@ -78,8 +78,6 @@ permissions:
       factions.permissions: true
       factions.setdiscord: true
       factions.discord: true
-      factions.paypal: true
-      factions.setpaypal: true
       factions.admin: true
       factions.autoclaim: true
       factions.promote: true
@@ -278,8 +276,6 @@ permissions:
     description: set permanent power for a faction
   factions.stuck:
     description: teleports player outside a faction
-  factions.setpaypal:
-    description: set paypal to faction
   factions.power:
     description: show player power info
   factions.power.any:
@@ -378,9 +374,5 @@ permissions:
     description: Open virtual shared faction chest
   factions.claimat:
     description: click to claim permission node for /f map
-  factions.paypal.viewall:
-    description: View other factions' paypal ID
-  factions.paypal:
-    description: Set/view your own faction's paypal.
   factions.showclaims:
     description: View all you faction claims.

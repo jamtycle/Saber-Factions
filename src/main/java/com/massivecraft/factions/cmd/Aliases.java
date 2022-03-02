@@ -112,8 +112,6 @@ public class Aliases {
     public static ArrayList<String> open = new ArrayList<>(Collections.singletonList("open"));
     public static ArrayList<String> owner_owner = new ArrayList<>(Collections.singletonList("owner"));
     public static ArrayList<String> owner_list = new ArrayList<>(Collections.singletonList("ownerlist"));
-    public static ArrayList<String> paypal_see = new ArrayList<>(Arrays.asList("paypal", "seepaypal"));
-    public static ArrayList<String> paypal_set = new ArrayList<>(Collections.singletonList("setpaypal"));
     public static ArrayList<String> peaceful = new ArrayList<>(Collections.singletonList("peaceful"));
     public static ArrayList<String> perm = new ArrayList<>(Arrays.asList("perm", "perms", "permission", "permissions"));
     public static ArrayList<String> permanent_faction = new ArrayList<>(Collections.singletonList("permanent"));

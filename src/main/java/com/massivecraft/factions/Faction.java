@@ -462,10 +462,6 @@ public interface Faction extends EconomyParticipator {
 
     Set<FLocation> getAllClaims();
 
-    String getPaypal();
-
-    void paypalSet(String paypal);
-
     // -------------------------------
     // Shields
     // -------------------------------

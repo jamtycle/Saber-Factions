@@ -37,7 +37,6 @@ public class CmdDebug extends FCommand {
         Logger.print("Grace Command: " + FCmdRoot.instance.fGraceEnabled, Logger.PrefixType.DEBUG);
         Logger.print("Focus Command: " + FCmdRoot.instance.fFocusEnabled, Logger.PrefixType.DEBUG);
         Logger.print("Fly Command: " + FCmdRoot.instance.fFlyEnabled, Logger.PrefixType.DEBUG);
-        Logger.print("PayPal Commands: " + FCmdRoot.instance.fPayPalEnabled, Logger.PrefixType.DEBUG);
         Logger.print("Inspect Command: " + FCmdRoot.instance.coreProtectEnabled, Logger.PrefixType.DEBUG);
         Logger.print("Internal FTOP Command: " + FCmdRoot.instance.internalFTOPEnabled, Logger.PrefixType.DEBUG);
         Logger.print("----End Command----", Logger.PrefixType.DEBUG);

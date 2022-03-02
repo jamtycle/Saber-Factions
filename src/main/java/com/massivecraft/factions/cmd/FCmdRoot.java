@@ -101,8 +101,6 @@ public class FCmdRoot extends FCommand implements CommandExecutor {
     public CmdSB cmdSB = new CmdSB();
     public CmdShowInvites cmdShowInvites = new CmdShowInvites();
     public CmdAnnounce cmdAnnounce = new CmdAnnounce();
-    public CmdPaypalSet cmdPaypalSet = new CmdPaypalSet();
-    public CmdPaypalSee cmdPaypalSee = new CmdPaypalSee();
     public CmdSeeChunk cmdSeeChunk = new CmdSeeChunk();
     public CmdConvert cmdConvert = new CmdConvert();
     public CmdFWarp cmdFWarp = new CmdFWarp();
@@ -332,12 +330,6 @@ public class FCmdRoot extends FCommand implements CommandExecutor {
             this.addSubCommand(this.cmdReserve);
         }
 
-        //PayPal
-        if (FactionsPlugin.getInstance().getConfig().getBoolean("fpaypal.Enabled", false) && !fPayPalEnabled) {
-            this.addSubCommand(this.cmdPaypalSet);
-            this.addSubCommand(this.cmdPaypalSee);
-            fPayPalEnabled = true;
-        }
         //Check
         if (Conf.useCheckSystem && !checkEnabled) {
             this.addSubCommand(this.cmdCheck);
