@@ -1,8 +1,10 @@
 package com.massivecraft.factions.scoreboards;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
+import com.massivecraft.factions.mysql.Faction;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import com.massivecraft.factions.tag.Tag;
 import com.massivecraft.factions.zcore.util.TL;
 
@@ -14,21 +16,21 @@ public abstract class FSidebarProvider {
      * @author FactionsUUID Team - Modified By CmdrKittens
      */
 
-    public abstract String getTitle(FPlayer fplayer);
+    public abstract String getTitle(FactionPlayer _player);
 
-    public abstract List<String> getLines(FPlayer fplayer);
+    public abstract List<String> getLines(FactionPlayer _player);
 
-    public String replaceTags(FPlayer fPlayer, String s) {
-        s = Tag.parsePlaceholders(fPlayer.getPlayer(), s);
+    public String replaceTags(FactionPlayer _player, String _replace_with) {
+        _replace_with = Tag.parsePlaceholders(_player.getPlayer(), _replace_with);
 
-        return qualityAssure(Tag.parsePlain(fPlayer, s));
+        return qualityAssure(Tag.parsePlain(_player, _replace_with));
     }
 
-    public String replaceTags(Faction faction, FPlayer fPlayer, String s) {
+    public String replaceTags(Faction _faction, FactionPlayer _player, String _replace_with) {
         // Run through Placeholder API first
-        s = Tag.parsePlaceholders(fPlayer.getPlayer(), s);
+        _replace_with = Tag.parsePlaceholders(_player.getPlayer(), _replace_with);
 
-        return qualityAssure(Tag.parsePlain(faction, fPlayer, s));
+        return qualityAssure(Tag.parsePlain(_faction, _player, _replace_with));
     }
 
     private String qualityAssure(String line) {

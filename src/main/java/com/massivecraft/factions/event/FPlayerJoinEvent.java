@@ -1,7 +1,7 @@
 package com.massivecraft.factions.event;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import org.bukkit.event.Cancellable;
 
 /**
@@ -16,7 +16,7 @@ public class FPlayerJoinEvent extends FactionPlayerEvent implements Cancellable 
     PlayerJoinReason reason;
     boolean cancelled = false;
 
-    public FPlayerJoinEvent(FPlayer fp, Faction f, PlayerJoinReason r) {
+    public FPlayerJoinEvent(IFactionPlayer fp, IFaction f, PlayerJoinReason r) {
         super(f, fp);
         reason = r;
     }

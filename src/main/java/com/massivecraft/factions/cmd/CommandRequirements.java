@@ -51,7 +51,7 @@ public class CommandRequirements {
 
         if (context.player != null) {
             // Is Player
-            if (!context.fPlayer.hasFaction() && memberOnly) {
+            if (!context.fPlayer.getHasFaction() && memberOnly) {
                 if (informIfNot) context.msg(TL.GENERIC_MEMBERONLY);
                 return false;
             }

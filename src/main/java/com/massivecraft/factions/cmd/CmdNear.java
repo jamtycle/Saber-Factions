@@ -1,7 +1,7 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
@@ -37,7 +37,7 @@ public class CmdNear extends FCommand {
         for (Entity e : context.player.getNearbyEntities(range, 255, range)) {
             if (e instanceof Player) {
                 Player player = (((Player) e).getPlayer());
-                FPlayer fplayer = FPlayers.getInstance().getByPlayer(player);
+                IFactionPlayer fplayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
                 if (context.faction == fplayer.getFaction()) {
                     double distance = context.player.getLocation().distance(player.getLocation());
                     context.sendMessage(format.replace("{playername}", player.getDisplayName()).replace("{distance}", (int) distance + ""));

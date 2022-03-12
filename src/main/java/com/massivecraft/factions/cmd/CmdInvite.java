@@ -1,11 +1,9 @@
 package com.massivecraft.factions.cmd;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
-import com.massivecraft.factions.cmd.audit.FLogType;
 import com.massivecraft.factions.struct.Permission;
-import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.zcore.fperms.PermissableAction;
 import com.massivecraft.factions.zcore.util.TL;
 import mkremins.fanciful.FancyMessage;
@@ -30,7 +28,7 @@ public class CmdInvite extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        FPlayer target = context.argAsBestFPlayerMatch(0);
+        IFactionPlayer target = context.argAsBestFPlayerMatch(0);
         if (target == null) {
             return;
         }
@@ -38,11 +36,6 @@ public class CmdInvite extends FCommand {
         if (target.getFaction() == context.faction) {
             context.msg(TL.COMMAND_INVITE_ALREADYMEMBER, target.getName(), context.faction.getTag());
             context.msg(TL.GENERIC_YOUMAYWANT + FactionsPlugin.getInstance().cmdBase.cmdKick.getUsageTemplate(context));
-            return;
-        }
-
-        // if economy is enabled, they're not on the bypass list, and this command has a cost set, make 'em pay
-        if (!context.payForCommand(Conf.econCostInvite, TL.COMMAND_INVITE_TOINVITE.toString(), TL.COMMAND_INVITE_FORINVITE.toString())) {
             return;
         }
 
@@ -68,7 +61,6 @@ public class CmdInvite extends FCommand {
             message.send(target.getPlayer());
         }
         context.faction.msg(TL.COMMAND_INVITE_INVITED, context.fPlayer.describeTo(context.faction, true), target.describeTo(context.faction));
-        FactionsPlugin.instance.logFactionEvent(context.faction, FLogType.INVITES, context.fPlayer.getName(), CC.Green + "invited", target.getName());
     }
 
     @Override

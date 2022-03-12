@@ -1,7 +1,9 @@
 package com.massivecraft.factions.event;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
+import com.massivecraft.factions.mysql.Faction;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import org.bukkit.event.Cancellable;
 
 /**
@@ -12,9 +14,14 @@ public class PowerRegenEvent extends FactionPlayerEvent implements Cancellable {
     private boolean cancelled = false;
     private double delta;
 
-    public PowerRegenEvent(Faction f, FPlayer p, double delta) {
+    public PowerRegenEvent(IFaction f, IFactionPlayer p, double delta) {
         super(f, p);
         this.delta = delta;
+    }
+
+    public PowerRegenEvent(Faction _faction, FactionPlayer _player, double _delta) {
+        super(_faction, _player);
+        this.delta = _delta;
     }
 
     public double getDelta() {

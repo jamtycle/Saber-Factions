@@ -4,7 +4,7 @@ import com.earth2me.essentials.IEssentials;
 import com.earth2me.essentials.User;
 import com.massivecraft.factions.Board;
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.event.FPlayerLeaveEvent;
 import com.massivecraft.factions.util.Logger;
 import org.bukkit.Location;
@@ -28,7 +28,7 @@ public class EssentialsHomeHandler implements Listener {
 
     @EventHandler
     public void onLeave(FPlayerLeaveEvent event) throws Exception {
-        Faction faction = event.getFaction();
+        IFaction faction = event.getFaction();
         User user = ess.getUser(UUID.fromString(event.getfPlayer().getId()));
         List<String> homes = user.getHomes();
         if (homes == null || homes.isEmpty()) {
@@ -37,7 +37,7 @@ public class EssentialsHomeHandler implements Listener {
         for (String homeName : user.getHomes()) {
             Location loc = user.getHome(homeName);
             FLocation floc = new FLocation(loc);
-            Faction factionAt = Board.getInstance().getFactionAt(floc);
+            IFaction factionAt = Board.getInstance().getFactionAt(floc);
             if (factionAt.equals(faction) && factionAt.isNormal()) {
                 user.delHome(homeName);
                 Logger.printArgs( "Removing home %s, player %s, in territory of %s", Logger.PrefixType.DEFAULT, homeName, event.getfPlayer().getName(), faction.getTag());

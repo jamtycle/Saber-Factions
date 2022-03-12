@@ -1,8 +1,8 @@
 package com.massivecraft.factions.cmd;
 
 import com.cryptomorin.xseries.XMaterial;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Role;
@@ -51,7 +51,7 @@ public class CmdInventorySee extends FCommand {
 
         ArrayList<Player> fplayers = context.fPlayer.getFaction().getOnlinePlayers();
 
-        FPlayer targetInv = context.argAsFPlayer(0);
+        IFactionPlayer targetInv = context.argAsFPlayer(0);
         if (targetInv == null || !fplayers.contains(targetInv.getPlayer())) {
             context.msg(TL.PLAYER_NOT_FOUND, Objects.requireNonNull(targetInv.getName()));
             return;
@@ -62,7 +62,7 @@ public class CmdInventorySee extends FCommand {
 
 
     public Inventory createCopy(Player player) {
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(player);
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
         Inventory inventory = Bukkit.createInventory(null, player.getInventory().getSize() + 9, fPlayer.getNameAndTag() + "'s Player Inventory");
         ItemStack[] armor = Objects.requireNonNull(player.getEquipment()).getArmorContents();
         ItemStack[] items = player.getInventory().getContents();

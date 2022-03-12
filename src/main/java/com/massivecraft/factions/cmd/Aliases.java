@@ -19,7 +19,6 @@ public class Aliases {
     public static ArrayList<String> alts_kick = new ArrayList<>(Collections.singletonList("kick"));
     public static ArrayList<String> audit = new ArrayList<>(Arrays.asList("audit", "log", "logs"));
     public static ArrayList<String> check = new ArrayList<>(Arrays.asList("check"));
-    public static ArrayList<String> weewoo = new ArrayList<>(Collections.singletonList("weewoo"));
     public static ArrayList<String> chest = new ArrayList<>(Arrays.asList("chest", "pv"));
     public static ArrayList<String> claim_auto = new ArrayList<>(Collections.singletonList("autoclaim"));
     public static ArrayList<String> claim_claim = new ArrayList<>(Collections.singletonList("claim"));
@@ -80,7 +79,6 @@ public class Aliases {
     public static ArrayList<String> create = new ArrayList<>(Collections.singletonList("create"));
     public static ArrayList<String> debug = new ArrayList<>(Collections.singletonList("debug"));
     public static ArrayList<String> deinvite = new ArrayList<>(Arrays.asList("deinvite", "deinv"));
-    public static ArrayList<String> deletefwarp = new ArrayList<>(Arrays.asList("delwarp", "dw", "deletewarp"));
     public static ArrayList<String> description = new ArrayList<>(Arrays.asList("desc", "description"));
     public static ArrayList<String> disband = new ArrayList<>(Collections.singletonList("disband"));
     public static ArrayList<String> roster = new ArrayList<>(Collections.singletonList("roster"));
@@ -89,7 +87,6 @@ public class Aliases {
     public static ArrayList<String> global = new ArrayList<>(Arrays.asList("gchat", "global", "globalchat"));
     public static ArrayList<String> fly = new ArrayList<>(Collections.singletonList("fly"));
     public static ArrayList<String> focus = new ArrayList<>(Collections.singletonList("focus"));
-    public static ArrayList<String> warp = new ArrayList<>(Arrays.asList("warp", "warps"));
     public static ArrayList<String> getvault = new ArrayList<>(Collections.singletonList("getvault"));
     public static ArrayList<String> home = new ArrayList<>(Collections.singletonList("home"));
     public static ArrayList<String> inspect = new ArrayList<>(Arrays.asList("inspect", "ins"));
@@ -131,7 +128,6 @@ public class Aliases {
     public static ArrayList<String> discord_set = new ArrayList<>(Collections.singletonList("setdiscord"));
     public static ArrayList<String> setBanner = new ArrayList<>(Collections.singletonList("setbanner"));
     public static ArrayList<String> setDefaultRole = new ArrayList<>(Arrays.asList("defaultrole", "def", "default", "defaultrank"));
-    public static ArrayList<String> setWarp = new ArrayList<>(Arrays.asList("sw", "setwarp"));
     public static ArrayList<String> setHome = new ArrayList<>(Collections.singletonList("sethome"));
     public static ArrayList<String> setMaxVaults = new ArrayList<>(Arrays.asList("smv", "setmaxvaults"));
     public static ArrayList<String> show_show = new ArrayList<>(Arrays.asList("show", "who"));

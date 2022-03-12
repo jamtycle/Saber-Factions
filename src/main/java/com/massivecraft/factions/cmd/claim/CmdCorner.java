@@ -40,7 +40,7 @@ public class CmdCorner extends FCommand {
         }
         FLocation to = new FLocation(context.player.getLocation());
         if (FactionsPlugin.getInstance().getFactionsPlayerListener().getCorners().contains(to)) {
-            Faction cornerAt = Board.getInstance().getFactionAt(to);
+            IFaction cornerAt = Board.getInstance().getFactionAt(to);
             if (cornerAt != null && cornerAt.isNormal() && !cornerAt.equals(context.fPlayer.getFaction())) {
                 context.msg(TL.COMMAND_CORNER_CANT_CLAIM);
             } else {
@@ -51,7 +51,7 @@ public class CmdCorner extends FCommand {
                         int newX = (int) ((to.getX() > 0L) ? (to.getX() - x) : (to.getX() + x));
                         int newZ = (int) ((to.getZ() > 0L) ? (to.getZ() - z) : (to.getZ() + z));
                         FLocation location = new FLocation(context.player.getWorld().getName(), newX, newZ);
-                        Faction at = Board.getInstance().getFactionAt(location);
+                        IFaction at = Board.getInstance().getFactionAt(location);
                         if (at == null || !at.isNormal()) {
                             surrounding.add(location);
                         }

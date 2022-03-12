@@ -1,7 +1,7 @@
 package com.massivecraft.factions.cmd.chest;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.zcore.util.TL;
 import org.bukkit.entity.Player;
@@ -21,7 +21,7 @@ public class AntiChestListener implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(player);
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
         if (!fPlayer.isInFactionsChest()) return;
 
         if (e.isCancelled()) return;
@@ -57,7 +57,7 @@ public class AntiChestListener implements Listener {
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent e) {
         Player p = (Player) e.getWhoClicked();
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(p);
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(p);
 
         if (!fPlayer.isInFactionsChest()) return;
         if (e.isCancelled()) return;

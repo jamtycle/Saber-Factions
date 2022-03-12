@@ -4,8 +4,8 @@ import com.cryptomorin.xseries.XMaterial;
 import com.github.stefvanschie.inventoryframework.Gui;
 import com.github.stefvanschie.inventoryframework.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.PaginatedPane;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Relation;
 import com.massivecraft.factions.struct.Role;
@@ -27,7 +27,7 @@ public class PermissableRelationFrame {
 
     private Gui gui;
 
-    public PermissableRelationFrame(Faction f) {
+    public PermissableRelationFrame(IFaction f) {
         ConfigurationSection section = FactionsPlugin.getInstance().getFileManager().getFperms().getConfig().getConfigurationSection("fperm-gui.relation");
         assert section != null;
         gui = new Gui(FactionsPlugin.getInstance(),
@@ -35,7 +35,7 @@ public class PermissableRelationFrame {
                 CC.translate(Objects.requireNonNull(FactionsPlugin.getInstance().getFileManager().getFperms().getConfig().getString("fperm-gui.relation.name")).replace("{faction}", f.getTag())));
     }
 
-    public void buildGUI(FPlayer fplayer) {
+    public void buildGUI(IFactionPlayer fplayer) {
         PaginatedPane pane = new PaginatedPane(0, 0, 9, gui.getRows());
         List<GuiItem> GUIItems = new ArrayList<>();
         ItemStack dumby = buildDummyItem();

@@ -26,7 +26,6 @@ public class ShutdownParameter {
 
         if (Discord.jda != null) Discord.jda.shutdownNow();
 
-        FactionsPlugin.getInstance().getFlogManager().saveLogs();
         saveReserves();
 
     }

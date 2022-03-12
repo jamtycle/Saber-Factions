@@ -1,6 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.util.CC;
@@ -34,10 +34,6 @@ public class CmdBanner extends FCommand {
             context.msg(TL.COMMAND_BANNER_NOBANNER);
             return;
         }
-        if (!context.fPlayer.takeMoney(FactionsPlugin.getInstance().getConfig().getInt("fbanners.Banner-Cost", 5000))) {
-            context.msg(TL.COMMAND_BANNER_NOTENOUGHMONEY);
-            return;
-        }
         ItemStack warBanner = context.fPlayer.getFaction().getBanner();
         ItemMeta warmeta = warBanner.getItemMeta();
         warmeta.setDisplayName(CC.translate(FactionsPlugin.getInstance().getConfig().getString("fbanners.Item.Name")));
@@ -49,7 +45,7 @@ public class CmdBanner extends FCommand {
     }
 
     @Deprecated
-    public boolean hasMoney(FPlayer fme, int amt) {
+    public boolean hasMoney(IFactionPlayer fme, int amt) {
         Economy econ = FactionsPlugin.getInstance().getEcon();
         if (econ.getBalance(fme.getPlayer()) >= amt) {
             return true;
@@ -59,7 +55,7 @@ public class CmdBanner extends FCommand {
     }
 
     @Deprecated
-    public void takeMoney(FPlayer fme, int amt) {
+    public void takeMoney(IFactionPlayer fme, int amt) {
         if (this.hasMoney(fme, amt)) {
             fme.sendMessage(TL.COMMAND_BANNER_MONEYTAKE.toString().replace("{amount}", amt + ""));
         }

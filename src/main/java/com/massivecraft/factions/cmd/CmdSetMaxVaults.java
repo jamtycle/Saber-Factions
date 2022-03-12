@@ -1,6 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
 import org.bukkit.ChatColor;
@@ -22,7 +22,7 @@ public class CmdSetMaxVaults extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        Faction targetFaction = context.argAsFaction(0);
+        IFaction targetFaction = context.argAsFaction(0);
         int value = context.argAsInt(1, -1);
         if (value < 0) {
             context.sender.sendMessage(ChatColor.RED + "Number must be greater than 0.");

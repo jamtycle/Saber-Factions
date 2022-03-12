@@ -14,7 +14,7 @@ public class FactionsJSON {
         if (!(Factions.getInstance() instanceof MemoryFactions)) {
             return;
         }
-        if (!(FPlayers.getInstance() instanceof MemoryFPlayers)) {
+        if (!(FactionPlayersManagerBase.getInstance() instanceof MemoryFPlayers)) {
             return;
         }
         if (!(Board.getInstance() instanceof MemoryBoard)) {
@@ -28,14 +28,14 @@ public class FactionsJSON {
                 new JSONBoard().convertFrom((MemoryBoard) Board.getInstance());
                 logger.info("Board Converted");
                 logger.info("Beginning FPlayers conversion to JSON");
-                new JSONFPlayers().convertFrom((MemoryFPlayers) FPlayers.getInstance());
+                new JSONFPlayers().convertFrom((MemoryFPlayers) FactionPlayersManagerBase.getInstance());
                 logger.info("FPlayers Converted");
                 logger.info("Beginning Factions conversion to JSON");
                 new JSONFactions().convertFrom((MemoryFactions) Factions.getInstance());
                 logger.info("Factions Converted");
                 logger.info("Refreshing object caches");
-                for (FPlayer fPlayer : FPlayers.getInstance().getAllFPlayers()) {
-                    Faction faction = Factions.getInstance().getFactionById(fPlayer.getFactionId());
+                for (IFactionPlayer fPlayer : FactionPlayersManagerBase.getInstance().getAllFPlayers()) {
+                    IFaction faction = Factions.getInstance().getFactionById(fPlayer.getFactionId());
                     faction.addFPlayer(fPlayer);
                 }
                 logger.info("Conversion Complete");

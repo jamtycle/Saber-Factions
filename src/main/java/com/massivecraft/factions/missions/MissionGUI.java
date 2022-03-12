@@ -1,7 +1,7 @@
 package com.massivecraft.factions.missions;
 
 import com.cryptomorin.xseries.XMaterial;
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.zcore.frame.FactionGUI;
@@ -24,11 +24,11 @@ public class MissionGUI implements FactionGUI {
      */
 
     private FactionsPlugin plugin;
-    private FPlayer fPlayer;
+    private IFactionPlayer fPlayer;
     private Inventory inventory;
     private Map<Integer, String> slots;
 
-    public MissionGUI(FactionsPlugin plugin, FPlayer fPlayer) {
+    public MissionGUI(FactionsPlugin plugin, IFactionPlayer fPlayer) {
         this.slots = new HashMap<>();
         this.plugin = plugin;
         this.fPlayer = fPlayer;

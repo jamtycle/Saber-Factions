@@ -5,13 +5,11 @@ import com.massivecraft.factions.discord.Discord;
 import com.massivecraft.factions.event.FPlayerLeaveEvent;
 import com.massivecraft.factions.event.FactionDisbandEvent;
 import com.massivecraft.factions.event.FactionDisbandEvent.PlayerDisbandReason;
-import com.massivecraft.factions.iface.EconomyParticipator;
-import com.massivecraft.factions.iface.RelationParticipator;
-import com.massivecraft.factions.integration.Econ;
+import com.massivecraft.factions.iface.IRelationParticipator;
 import com.massivecraft.factions.missions.Mission;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import com.massivecraft.factions.scoreboards.FTeamWrapper;
 import com.massivecraft.factions.struct.BanInfo;
-import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Relation;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.util.*;
@@ -33,70 +31,67 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class MemoryFaction implements Faction, EconomyParticipator {
+public abstract class MemoryFaction implements IFaction, IRelationParticipator {
+
+    // region Variables
+
     public HashMap<Integer, String> rules = new HashMap<>();
-    public int tnt;
-    public Location checkpoint;
-    public LazyLocation vault;
     public HashMap<String, Integer> upgrades = new HashMap<>();
-    protected String id = null;
+
+    public LazyLocation vault;
+    protected int maxVaults;
+
     protected boolean peacefulExplosionsEnabled;
     protected boolean permanent;
-    protected String tag;
-    protected String description;
     protected boolean open;
     protected boolean peaceful;
-    protected Integer permanentPower;
-    protected LazyLocation home;
-    protected long foundedDate;
     protected transient long lastPlayerLoggedOffTime;
-    protected double money;
     protected double powerBoost;
-    protected String paypal;
     protected Map<String, Relation> relationWish = new HashMap<>();
     protected Map<FLocation, Set<String>> claimOwnership = new ConcurrentHashMap<>();
-    protected transient Set<FPlayer> fplayers = new HashSet<>();
-    protected transient Set<FPlayer> alts = new HashSet<>();
-    protected Set<String> invites = new HashSet<>();
-    protected Set<String> altinvites = new HashSet<>();
-    protected HashMap<String, List<String>> announcements = new HashMap<>();
-    protected ConcurrentHashMap<String, LazyLocation> warps = new ConcurrentHashMap<>();
-    protected ConcurrentHashMap<String, String> warpPasswords = new ConcurrentHashMap<>();
-    protected int maxVaults;
-    protected Role defaultRole;
+
     protected Map<Permissable, Map<PermissableAction, Access>> permissions = new HashMap<>();
     protected Set<BanInfo> bans = new HashSet<>();
     protected String player;
     protected String discord;
-    Inventory chest;
     Map<String, Object> bannerSerialized;
     private long lastDeath;
     private int strikes = 0;
-    private int points = 0;
-    private Map<String, Mission> missions = new ConcurrentHashMap<>();
+
     private int wallCheckMinutes;
     private int bufferCheckMinutes;
     private Map<Long, String> checks;
     private Map<UUID, Integer> playerWallCheckCount;
     private Map<UUID, Integer> playerBufferCheckCount;
-    private boolean weeWoo;
-    private int tntBankSize;
-    private int warpLimit;
-    private double reinforcedArmor;
-    private List<String> completedMissions;
-    private String factionChatChannelId;
+
     private String wallNotifyChannelId;
     private String bufferNotifyChannelId;
-    private String weeWooChannelId;
-    private String notifyFormat;
-    private String weeWooFormat;
+
     private String guildId;
     private String memberRoleId;
     private int allowedSpawnerChunks;
     private Set<FastChunk> spawnerChunks;
     private boolean protectedfac = true;
-    private boolean cloaked;
 
+    protected transient Set<FactionPlayer> faction_players = new HashSet<>();
+
+    protected Set<String> invites = new HashSet<>();
+    protected HashMap<String, List<String>> announcements = new HashMap<>();
+
+    protected Role defaultRole;
+
+    Inventory chest;
+
+    private Map<String, Mission> missions = new ConcurrentHashMap<>();
+    private List<String> completedMissions;
+
+    private String factionChatChannelId;
+
+    private String notifyFormat;
+
+    // endregion
+
+    // region Constructors
 
     // -------------------------------------------- //
     // Construct
@@ -121,7 +116,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         this.defaultRole = Role.RECRUIT;
         this.wallCheckMinutes = 0;
         this.bufferCheckMinutes = 0;
-        this.weeWoo = false;
         this.checks = new ConcurrentHashMap<>();
         this.playerWallCheckCount = new ConcurrentHashMap<>();
         this.playerBufferCheckCount = new ConcurrentHashMap<>();
@@ -129,7 +123,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         this.wallNotifyChannelId = null;
         this.bufferNotifyChannelId = null;
         this.notifyFormat = "@everyone, check %type%";
-        this.weeWooFormat = "@everyone, we're being raided! Get online!";
         this.memberRoleId = null;
         allowedSpawnerChunks = Conf.allowedSpawnerChunks;
         spawnerChunks = new HashSet<>();
@@ -162,7 +155,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         this.defaultRole = Role.NORMAL;
         this.wallCheckMinutes = 0;
         this.bufferCheckMinutes = 0;
-        this.weeWoo = false;
         this.cloaked = false;
         this.checks = new ConcurrentHashMap<>();
         allowedSpawnerChunks = Conf.allowedSpawnerChunks;
@@ -171,6 +163,8 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         this.playerBufferCheckCount = new ConcurrentHashMap<>();
         resetPerms(); // Reset on new Faction so it has default values.
     }
+
+    // endregion
 
 
     public boolean isFactionCloaked() {
@@ -185,143 +179,49 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return this.protectedfac;
     }
 
-    public void setProtected(boolean protectedfac) {
-        this.protectedfac = protectedfac;
+    public void clearSpawnerChunks() {
+        this.spawnerChunks.clear();
+    }
+
+
+    public Set<FastChunk> getSpawnerChunks() {
+        return this.spawnerChunks;
     }
 
     public int getSpawnerChunkCount() {
         return this.spawnerChunks.size();
     }
 
-    public void clearSpawnerChunks() {
-        this.spawnerChunks.clear();
-    }
-
     public int getAllowedSpawnerChunks() {
         return this.allowedSpawnerChunks;
-    }
-
-    public void setAllowedSpawnerChunks(int chunks) {
-        this.allowedSpawnerChunks = chunks;
-    }
-
-    public Set<FastChunk> getSpawnerChunks() {
-        return this.spawnerChunks;
-    }
-
-    public void setSpawnerChunks(Set<FastChunk> spawnerChunks) {
-        this.spawnerChunks = spawnerChunks;
-    }
-
-    public int getPoints() {
-        return points;
-    }
-
-    public void setPoints(int points) {
-        this.points = points;
     }
 
     public int getStrikes() {
         return strikes;
     }
 
-    public void setStrikes(int strikes) {
-        this.strikes = strikes;
-    }
-
-    public HashMap<String, List<String>> getAnnouncements() {
-        return this.announcements;
-    }
-
-    public void addAnnouncement(FPlayer fPlayer, String msg) {
-        List<String> list = announcements.containsKey(fPlayer.getId()) ? announcements.get(fPlayer.getId()) : new ArrayList<>();
-        list.add(msg);
-        announcements.put(fPlayer.getId(), list);
-    }
-
-    public void sendUnreadAnnouncements(FPlayer fPlayer) {
-        if (!announcements.containsKey(fPlayer.getId())) {
-            return;
-        }
-        fPlayer.msg(TL.FACTIONS_ANNOUNCEMENT_TOP);
-        for (String s : announcements.get(fPlayer.getPlayer().getUniqueId().toString())) {
-            fPlayer.sendMessage(s);
-        }
-        fPlayer.msg(TL.FACTIONS_ANNOUNCEMENT_BOTTOM);
-        announcements.remove(fPlayer.getId());
-    }
-
-    public void removeAnnouncements(FPlayer fPlayer) {
-        announcements.remove(fPlayer.getId());
-    }
-
-    public ConcurrentHashMap<String, LazyLocation> getWarps() {
-        return this.warps;
-    }
-
-    public LazyLocation getWarp(String name) {
-        return this.warps.get(name);
-    }
-
-    public void setWarp(String name, LazyLocation loc) {
-        this.warps.put(name, loc);
-    }
-
-    public boolean isWarp(String name) {
-        return this.warps.containsKey(name);
-    }
-
-    public boolean removeWarp(String name) {
-        warpPasswords.remove(name); // remove password no matter what.
-        return warps.remove(name) != null;
-    }
-
-    public boolean isWarpPassword(String warp, String password) {
-        return hasWarpPassword(warp) && warpPasswords.get(warp.toLowerCase()).equals(password);
+    public int getPoints() {
+        return points;
     }
 
     public String getDiscord() {
         return this.discord;
     }
 
-    public void setDiscord(String link) {
-        this.discord = link;
-    }
-
-    public String getPaypal() {
-        return this.paypal;
-    }
-
-    public void paypalSet(String paypal) {
-        this.paypal = paypal;
-    }
-
-    public boolean hasWarpPassword(String warp) {
-        return warpPasswords.containsKey(warp.toLowerCase());
-    }
-
-    public void setWarpPassword(String warp, String password) {
-        warpPasswords.put(warp.toLowerCase(), password);
-    }
-
-    public void clearWarps() {
-        warps.clear();
-    }
-
     public int getMaxVaults() {
         return this.maxVaults;
-    }
-
-    public void setMaxVaults(int value) {
-        this.maxVaults = value;
     }
 
     public String getFocused() {
         return this.player;
     }
 
-    public void setFocused(String fp) {
-        this.player = fp;
+    public String getId() {
+        return id;
+    }
+
+    public HashMap<String, List<String>> getAnnouncements() {
+        return this.announcements;
     }
 
     public Set<String> getInvites() {
@@ -331,124 +231,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     public Set<String> getAltInvites() {
         return altinvites;
     }
-
-    public void deinviteAlt(FPlayer fplayer) {
-        altinvites.remove(fplayer.getId());
-    }
-
-    public void deinviteAllAlts() {
-        altinvites.clear();
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void invite(FPlayer fplayer) {
-        this.invites.add(fplayer.getId());
-    }
-
-    public void altInvite(FPlayer fplayer) {
-        this.altinvites.add(fplayer.getId());
-    }
-
-    public void deinvite(FPlayer fplayer) {
-        this.invites.remove(fplayer.getId());
-        this.altinvites.remove(fplayer.getId());
-    }
-
-    public boolean altInvited(FPlayer fplayer) {
-        return this.altinvites.contains(fplayer.getId());
-    }
-
-    public boolean isInvited(FPlayer fplayer) {
-        return this.invites.contains(fplayer.getId()) || this.altinvites.contains(fplayer.getId());
-    }
-
-    public void ban(FPlayer target, FPlayer banner) {
-        BanInfo info = new BanInfo(banner.getId(), target.getId(), System.currentTimeMillis());
-        this.bans.add(info);
-    }
-
-    public void unban(FPlayer player) {
-        bans.removeIf(banInfo -> banInfo.getBanned().equalsIgnoreCase(player.getId()));
-    }
-
-    @Override
-    public void disband(Player disbander) {
-        disband(disbander, PlayerDisbandReason.PLUGIN);
-    }
-
-    @Override
-    public void disband(Player disbander, PlayerDisbandReason reason) {
-
-        boolean disbanderIsConsole = disbander == null;
-        FPlayer fdisbander = null;
-        if (!disbanderIsConsole) {
-            fdisbander = FPlayers.getInstance().getByOfflinePlayer(disbander);
-        }
-
-
-        FactionDisbandEvent disbandEvent = new FactionDisbandEvent(disbander, this.getId(), reason);
-        Bukkit.getServer().getPluginManager().callEvent(disbandEvent);
-        if (disbandEvent.isCancelled()) {
-            return;
-        }
-
-        // Send FPlayerLeaveEvent for each player in the faction and reset their Discord settings
-        for (FPlayer fplayer : this.getFPlayers()) {
-            Bukkit.getServer().getPluginManager().callEvent(new FPlayerLeaveEvent(fplayer, this, FPlayerLeaveEvent.PlayerLeaveReason.DISBAND));
-            if (Discord.useDiscord && fplayer.discordSetup() && Discord.isInMainGuild(fplayer.discordUser()) && Discord.mainGuild != null) {
-                Member m = Discord.mainGuild.retrieveMember(fplayer.discordUser()).complete();
-                if (FactionsPlugin.getInstance().getFileManager().getDiscord().fetchBoolean("Discord.Guild.leaderRoles") && fplayer.getRole() == Role.LEADER) {
-                    Discord.mainGuild.removeRoleFromMember(m, Discord.mainGuild.getRoleById(FactionsPlugin.getInstance().getFileManager().getDiscord().fetchString("Discord.Guild.leaderRoleID"))).queue();
-                }
-                if (FactionsPlugin.getInstance().getFileManager().getDiscord().fetchBoolean("Discord.Guild.factionRoles")) {
-                    Discord.mainGuild.removeRoleFromMember(m, Objects.requireNonNull(Discord.createFactionRole(this.getTag()))).queue();
-                }
-                if (FactionsPlugin.getInstance().getFileManager().getDiscord().fetchBoolean("Discord.Guild.factionDiscordTags")) {
-                    Discord.resetNick(fplayer);
-                }
-            }
-        }
-
-        if (Conf.logFactionDisband) {
-            //TODO: Format this correctly and translate.
-            Logger.print("The faction " + this.getTag() + " (" + this.getId() + ") was disbanded by " + (disbanderIsConsole ? "console command" : fdisbander.getName()) + ".", Logger.PrefixType.DEFAULT);
-        }
-
-        if (Econ.shouldBeUsed() && !disbanderIsConsole) {
-            // Should we prevent to withdraw money if the faction was just created
-            //Give all the faction's money to the disbander
-            double amount = this.getFactionBalance();
-
-            Econ.transferMoney(fdisbander, this, fdisbander, amount, false);
-
-            if (amount > 0.0) {
-                String amountString = Econ.moneyString(amount);
-                msg(TL.COMMAND_DISBAND_HOLDINGS, amountString);
-                //TODO: Format this correctly and translate
-                Logger.print(fdisbander.getName() + " has been given bank holdings of " + amountString + " from disbanding " + this.getTag() + ".", Logger.PrefixType.DEFAULT);
-            }
-        }
-        Factions.getInstance().removeFaction(this.getId());
-        FTeamWrapper.applyUpdates(this);
-    }
-
-    public boolean isBanned(FPlayer player) {
-        for (BanInfo info : bans) {
-            if (info.getBanned().equalsIgnoreCase(player.getId())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
 
     public Set<BanInfo> getBannedPlayers() {
         return this.bans;
@@ -463,44 +245,11 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return rules;
     }
 
-    public void setRule(int index, String rule) {
-        rules.put(index, rule);
-    }
-
-    public void removeRule(int index) {
-        HashMap<Integer, String> newRule = rules;
-        newRule.remove(index);
-    }
-
-    public void addTnt(int amt) {
-        tnt += amt;
-    }
-
-    public void takeTnt(int amt) {
-        tnt -= amt;
-    }
-
-    public int getTnt() {
-        return tnt;
-    }
-
-    public void setTnt(int amt) {
-        tnt = amt;
-    }
-
     public Location getVault() {
         if (vault == null) {
             return null;
         }
         return vault.getLocation();
-    }
-
-    public void setVault(Location vaultLocation) {
-        if (vaultLocation == null) {
-            vault = null;
-            return;
-        }
-        vault = new LazyLocation(vaultLocation);
     }
 
     public int getUpgrade(UpgradeType upgrade) {
@@ -533,57 +282,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return size * 9;
     }
 
-
-    @Override
-    public void setChestSize(int chestSize) {
-        ItemStack[] contents = this.getChestInventory().getContents();
-        chest = Bukkit.createInventory(null, chestSize, CC.translate(FactionsPlugin.getInstance().getConfig().getString("fchest.Inventory-Title")));
-        chest.setContents(contents);
-    }
-
-
-    @Override
-    public void setBannerPattern(ItemStack banner) {
-        bannerSerialized = banner.serialize();
-    }
-
-
-    @Override
-    public int getWarpsLimit() {
-        if (warpLimit == 0) {
-            return FactionsPlugin.getInstance().getConfig().getInt("max-warps");
-        }
-        return warpLimit;
-    }
-
-    @Override
-    public void setWarpsLimit(int warpLimit) {
-        this.warpLimit = warpLimit;
-    }
-
-    @Override
-    public int getTntBankLimit() {
-        if (tntBankSize == 0) {
-            return FactionsPlugin.getInstance().getConfig().getInt("ftnt.Bank-Limit");
-        }
-        return tntBankSize;
-    }
-
-    @Override
-    public void setTntBankLimit(int newLimit) {
-        tntBankSize = newLimit;
-    }
-
-    @Override
-    public double getReinforcedArmor() {
-        return this.reinforcedArmor;
-    }
-
-    @Override
-    public void setReinforcedArmor(double newPercent) {
-        reinforcedArmor = newPercent;
-    }
-
     @Override
     public ItemStack getBanner() {
         if (bannerSerialized == null) {
@@ -592,24 +290,12 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return ItemStack.deserialize(bannerSerialized);
     }
 
-    public void setUpgrade(UpgradeType upgrade, int level) {
-        upgrades.put(upgrade.toString(), level);
-    }
-
     public int getWallCheckMinutes() {
         return this.wallCheckMinutes;
     }
 
-    public void setWallCheckMinutes(int wallCheckMinutes) {
-        this.wallCheckMinutes = wallCheckMinutes;
-    }
-
     public int getBufferCheckMinutes() {
         return this.bufferCheckMinutes;
-    }
-
-    public void setBufferCheckMinutes(int bufferCheckMinutes) {
-        this.bufferCheckMinutes = bufferCheckMinutes;
     }
 
     public Map<Long, String> getChecks() {
@@ -624,14 +310,209 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return this.playerWallCheckCount;
     }
 
-    @Override
-    public String getGuildId() {
-        return this.guildId;
+
+    public void setProtected(boolean protectedfac) {
+        this.protectedfac = protectedfac;
+    }
+
+
+    public void setAllowedSpawnerChunks(int chunks) {
+        this.allowedSpawnerChunks = chunks;
+    }
+
+    public void setSpawnerChunks(Set<FastChunk> spawnerChunks) {
+        this.spawnerChunks = spawnerChunks;
+    }
+
+    public void setPoints(int points) {
+        this.points = points;
+    }
+
+    public void setStrikes(int strikes) {
+        this.strikes = strikes;
+    }
+
+    public void addAnnouncement(FactionPlayer fPlayer, String msg) {
+        List<String> list = announcements.containsKey(fPlayer.getId()) ? announcements.get(fPlayer.getId()) : new ArrayList<>();
+        list.add(msg);
+        announcements.put(fPlayer.getId(), list);
+    }
+
+    public void sendUnreadAnnouncements(FactionPlayer fPlayer) {
+        if (!announcements.containsKey(fPlayer.getId())) {
+            return;
+        }
+        fPlayer.msg(TL.FACTIONS_ANNOUNCEMENT_TOP);
+        for (String s : announcements.get(fPlayer.getPlayer().getUniqueId().toString())) {
+            fPlayer.sendMessage(s);
+        }
+        fPlayer.msg(TL.FACTIONS_ANNOUNCEMENT_BOTTOM);
+        announcements.remove(fPlayer.getId());
+    }
+
+    public void removeAnnouncements(FactionPlayer fPlayer) {
+        announcements.remove(fPlayer.getId());
+    }
+
+    public void setDiscord(String link) {
+        this.discord = link;
+    }
+
+
+    public void setMaxVaults(int value) {
+        this.maxVaults = value;
+    }
+
+
+    public void setFocused(String fp) {
+        this.player = fp;
+    }
+
+
+    public void deinviteAlt(FactionPlayer fplayer) {
+        altinvites.remove(fplayer.getId());
+    }
+
+    public void deinviteAllAlts() {
+        altinvites.clear();
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void invite(FactionPlayer fplayer) {
+        this.invites.add(fplayer.getId());
+    }
+
+    public void altInvite(FactionPlayer fplayer) {
+        this.altinvites.add(fplayer.getId());
+    }
+
+    public void deinvite(FactionPlayer fplayer) {
+        this.invites.remove(fplayer.getId());
+        this.altinvites.remove(fplayer.getId());
+    }
+
+    public boolean altInvited(FactionPlayer fplayer) {
+        return this.altinvites.contains(fplayer.getId());
+    }
+
+    public boolean isInvited(FactionPlayer fplayer) {
+        return this.invites.contains(fplayer.getId()) || this.altinvites.contains(fplayer.getId());
+    }
+
+    public void ban(FactionPlayer target, FactionPlayer banner) {
+        BanInfo info = new BanInfo(banner.getId(), target.getId(), System.currentTimeMillis());
+        this.bans.add(info);
+    }
+
+    public void unban(FactionPlayer player) {
+        bans.removeIf(banInfo -> banInfo.getBanned().equalsIgnoreCase(player.getId()));
     }
 
     @Override
-    public void setGuildId(String guildId) {
-        this.guildId = guildId;
+    public void disband(Player disbander) {
+        disband(disbander, PlayerDisbandReason.PLUGIN);
+    }
+
+    @Override
+    public void disband(Player disbander, PlayerDisbandReason reason) {
+
+        boolean disbanderIsConsole = disbander == null;
+        FactionPlayer fdisbander = null;
+        if (!disbanderIsConsole) {
+            fdisbander = FactionPlayersManagerBase.getInstance().getByOfflinePlayer(disbander);
+        }
+
+
+        FactionDisbandEvent disbandEvent = new FactionDisbandEvent(disbander, this.getId(), reason);
+        Bukkit.getServer().getPluginManager().callEvent(disbandEvent);
+        if (disbandEvent.isCancelled()) {
+            return;
+        }
+
+        // Send FPlayerLeaveEvent for each player in the faction and reset their Discord settings
+        for (FactionPlayer fplayer : this.getFPlayers()) {
+            Bukkit.getServer().getPluginManager().callEvent(new FPlayerLeaveEvent(fplayer, this, FPlayerLeaveEvent.PlayerLeaveReason.DISBAND));
+            if (Discord.useDiscord && fplayer.discordSetup() && Discord.isInMainGuild(fplayer.discordUser()) && Discord.mainGuild != null) {
+                Member m = Discord.mainGuild.retrieveMember(fplayer.discordUser()).complete();
+                if (FactionsPlugin.getInstance().getFileManager().getDiscord().fetchBoolean("Discord.Guild.leaderRoles") && fplayer.getRole() == Role.LEADER) {
+                    Discord.mainGuild.removeRoleFromMember(m, Discord.mainGuild.getRoleById(FactionsPlugin.getInstance().getFileManager().getDiscord().fetchString("Discord.Guild.leaderRoleID"))).queue();
+                }
+                if (FactionsPlugin.getInstance().getFileManager().getDiscord().fetchBoolean("Discord.Guild.factionRoles")) {
+                    Discord.mainGuild.removeRoleFromMember(m, Objects.requireNonNull(Discord.createFactionRole(this.getTag()))).queue();
+                }
+                if (FactionsPlugin.getInstance().getFileManager().getDiscord().fetchBoolean("Discord.Guild.factionDiscordTags")) {
+                    Discord.resetNick(fplayer);
+                }
+            }
+        }
+
+        if (Conf.logFactionDisband) {
+            //TODO: Format this correctly and translate.
+            Logger.print("The faction " + this.getTag() + " (" + this.getId() + ") was disbanded by " + (disbanderIsConsole ? "console command" : fdisbander.getName()) + ".", Logger.PrefixType.DEFAULT);
+        }
+
+        Factions.getInstance().removeFaction(this.getId());
+        FTeamWrapper.applyUpdates(this);
+    }
+
+    public boolean isBanned(FactionPlayer player) {
+        for (BanInfo info : bans) {
+            if (info.getBanned().equalsIgnoreCase(player.getId())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void setRule(int index, String rule) {
+        rules.put(index, rule);
+    }
+
+    public void removeRule(int index) {
+        HashMap<Integer, String> newRule = rules;
+        newRule.remove(index);
+    }
+
+
+    public void setVault(Location vaultLocation) {
+        if (vaultLocation == null) {
+            vault = null;
+            return;
+        }
+        vault = new LazyLocation(vaultLocation);
+    }
+
+    @Override
+    public void setChestSize(int chestSize) {
+        ItemStack[] contents = this.getChestInventory().getContents();
+        chest = Bukkit.createInventory(null, chestSize, CC.translate(FactionsPlugin.getInstance().getConfig().getString("fchest.Inventory-Title")));
+        chest.setContents(contents);
+    }
+
+    @Override
+    public void setBannerPattern(ItemStack banner) {
+        bannerSerialized = banner.serialize();
+    }
+
+    public void setUpgrade(UpgradeType upgrade, int level) {
+        upgrades.put(upgrade.toString(), level);
+    }
+
+    public void setWallCheckMinutes(int wallCheckMinutes) {
+        this.wallCheckMinutes = wallCheckMinutes;
+    }
+
+    public void setBufferCheckMinutes(int bufferCheckMinutes) {
+        this.bufferCheckMinutes = bufferCheckMinutes;
+    }
+
+    @Override
+    public String getGuildId() {
+        return this.guildId;
     }
 
     @Override
@@ -640,18 +521,8 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     }
 
     @Override
-    public void setMemberRoleId(String memberRoleId) {
-        this.memberRoleId = memberRoleId;
-    }
-
-    @Override
     public String getFactionChatChannelId() {
         return this.factionChatChannelId;
-    }
-
-    @Override
-    public void setFactionChatChannelId(String factionChatChannelId) {
-        this.factionChatChannelId = factionChatChannelId;
     }
 
     @Override
@@ -660,28 +531,8 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     }
 
     @Override
-    public void setWallNotifyChannelId(String wallNotifyChannelId) {
-        this.wallNotifyChannelId = wallNotifyChannelId;
-    }
-
-    @Override
     public String getBufferNotifyChannelId() {
         return this.bufferNotifyChannelId;
-    }
-
-    @Override
-    public void setBufferNotifyChannelId(String bufferNotifyChannelId) {
-        this.bufferNotifyChannelId = bufferNotifyChannelId;
-    }
-
-    @Override
-    public String getWeeWooChannelId() {
-        return this.weeWooChannelId;
-    }
-
-    @Override
-    public void setWeeWooChannelId(String weeWooChannelId) {
-        this.weeWooChannelId = weeWooChannelId;
     }
 
     @Override
@@ -689,31 +540,97 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return this.notifyFormat;
     }
 
+    public Location getCheckpoint() {
+        return checkpoint;
+    }
+
+    public boolean getOpen() {
+        return open;
+    }
+
+    public boolean getPeacefulExplosionsEnabled() {
+        return this.peacefulExplosionsEnabled;
+    }
+
+    public String getTag(String prefix) {
+        return prefix + this.tag;
+    }
+
+    public String getTag(IFaction otherFaction) {
+        if (otherFaction == null) {
+            return getTag();
+        }
+        return this.getTag(this.getColorTo(otherFaction).toString());
+    }
+
+    public String getTag(FactionPlayer otherFplayer) {
+        if (otherFplayer == null) {
+            return getTag();
+        }
+        return this.getTag(this.getColorTo(otherFplayer).toString());
+    }
+
+    public String getComparisonTag() {
+        return MiscUtil.getComparisonString(this.tag);
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public String getTag() {
+        return this.tag;
+    }
+
+    public Location getHome() {
+        confirmValidHome();
+        return (this.home != null) ? this.home.getLocation() : null;
+    }
+
+    public String getAccountId() {
+        // We need to override the default money given to players.
+        return "faction-" + this.getId();
+    }
+
+    public double getFactionBalance() {
+        return this.money;
+    }
+
+    public Integer getPermanentPower() {
+        return this.permanentPower;
+    }
+
+
+    @Override
+    public void setGuildId(String guildId) {
+        this.guildId = guildId;
+    }
+
+    @Override
+    public void setMemberRoleId(String memberRoleId) {
+        this.memberRoleId = memberRoleId;
+    }
+
+    @Override
+    public void setFactionChatChannelId(String factionChatChannelId) {
+        this.factionChatChannelId = factionChatChannelId;
+    }
+
+
+    @Override
+    public void setWallNotifyChannelId(String wallNotifyChannelId) {
+        this.wallNotifyChannelId = wallNotifyChannelId;
+    }
+
+
+    @Override
+    public void setBufferNotifyChannelId(String bufferNotifyChannelId) {
+        this.bufferNotifyChannelId = bufferNotifyChannelId;
+    }
+
     @Override
     public void setNotifyFormat(String notifyFormat) {
         this.notifyFormat = notifyFormat;
-    }
-
-    @Override
-    public String getWeeWooFormat() {
-        return this.weeWooFormat;
-    }
-
-    @Override
-    public void setWeeWooFormat(String weeWooFormat) {
-        this.weeWooFormat = weeWooFormat;
-    }
-
-    public boolean isWeeWoo() {
-        return this.weeWoo;
-    }
-
-    public void setWeeWoo(boolean weeWoo) {
-        this.weeWoo = weeWoo;
-    }
-
-    public Location getCheckpoint() {
-        return checkpoint;
     }
 
     public void setCheckpoint(Location location) {
@@ -728,9 +645,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         rules.put(rules.size(), rule);
     }
 
-    public boolean getOpen() {
-        return open;
-    }
 
     public void setOpen(boolean isOpen) {
         open = isOpen;
@@ -744,9 +658,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         this.peaceful = isPeaceful;
     }
 
-    public boolean getPeacefulExplosionsEnabled() {
-        return this.peacefulExplosionsEnabled;
-    }
 
     public void setPeacefulExplosionsEnabled(boolean val) {
         peacefulExplosionsEnabled = val;
@@ -764,9 +675,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         permanent = isPermanent;
     }
 
-    public String getTag() {
-        return this.tag;
-    }
+|
 
     public void setTag(String str) {
         if (Conf.factionTagForceUpperCase) {
@@ -781,31 +690,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         }
     }
 
-    public String getTag(String prefix) {
-        return prefix + this.tag;
-    }
-
-    public String getTag(Faction otherFaction) {
-        if (otherFaction == null) {
-            return getTag();
-        }
-        return this.getTag(this.getColorTo(otherFaction).toString());
-    }
-
-    public String getTag(FPlayer otherFplayer) {
-        if (otherFplayer == null) {
-            return getTag();
-        }
-        return this.getTag(this.getColorTo(otherFplayer).toString());
-    }
-
-    public String getComparisonTag() {
-        return MiscUtil.getComparisonString(this.tag);
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
 
     public void setDescription(String value) {
         this.description = value;
@@ -813,11 +697,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
 
     public boolean hasHome() {
         return this.getHome() != null;
-    }
-
-    public Location getHome() {
-        confirmValidHome();
-        return (this.home != null) ? this.home.getLocation() : null;
     }
 
     public void setHome(Location home) {
@@ -829,12 +708,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         this.home = null;
     }
 
-    public long getFoundedDate() {
-        if (this.foundedDate == 0) {
-            setFoundedDate(System.currentTimeMillis());
-        }
-        return this.foundedDate;
-    }
 
     public void setFoundedDate(long newDate) {
         this.foundedDate = newDate;
@@ -849,22 +722,10 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         this.home = null;
     }
 
-    public String getAccountId() {
-        // We need to override the default money given to players.
-        return "faction-" + this.getId();
-    }
-
-    public double getFactionBalance() {
-        return this.money;
-    }
-
     public void setFactionBalance(double money) {
         this.money = money;
     }
 
-    public Integer getPermanentPower() {
-        return this.permanentPower;
-    }
 
     public void setPermanentPower(Integer permanentPower) {
         this.permanentPower = permanentPower;
@@ -874,9 +735,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return this.permanentPower != null;
     }
 
-    public double getPowerBoost() {
-        return this.powerBoost;
-    }
 
     public void setPowerBoost(double powerBoost) {
         this.powerBoost = powerBoost;
@@ -888,21 +746,17 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
 
     }
 
+    public double getPowerBoost() {
+        return this.powerBoost;
+    }
+
     public long getLastDeath() {
         return this.lastDeath;
     }
 
-    // -------------------------------------------- //
-    // F Permissions stuff
-    // -------------------------------------------- //
-
-    public void setLastDeath(long time) {
-        this.lastDeath = time;
-    }
-
     public int getKills() {
         int kills = 0;
-        for (FPlayer fp : getFPlayers()) {
+        for (FactionPlayer fp : getFPlayers()) {
             kills += fp.getKills();
         }
 
@@ -911,7 +765,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
 
     public int getDeaths() {
         int deaths = 0;
-        for (FPlayer fp : getFPlayers()) {
+        for (FactionPlayer fp : getFPlayers()) {
             deaths += fp.getDeaths();
         }
 
@@ -938,7 +792,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
      * @param permissableAction
      * @return
      */
-    public Access getAccess(FPlayer player, PermissableAction permissableAction) {
+    public Access getAccess(FactionPlayer player, PermissableAction permissableAction) {
         if (player == null || permissableAction == null) return Access.UNDEFINED;
         if (player.getFaction() == this && player.getRole() == Role.LEADER) return Access.ALLOW;
 
@@ -948,6 +802,190 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         if (accessMap != null && accessMap.containsKey(permissableAction)) return accessMap.get(permissableAction);
 
         return Access.UNDEFINED;
+    }
+
+    /**
+     * Read only map of Permissions.
+     *
+     * @return
+     */
+    public Map<Permissable, Map<PermissableAction, Access>> getPermissions() {
+        return Collections.unmodifiableMap(permissions);
+    }
+
+    public Role getDefaultRole() {
+        return this.defaultRole;
+    }
+
+    public double getPower() {
+        if (this.hasPermanentPower()) return this.getPermanentPower();
+        double ret = 0;
+        for (FactionPlayer fplayer : fplayers) ret += fplayer.getPower();
+        if (FactionsPlugin.getInstance().getConfig().getBoolean("f-alts.Have-Power")) {
+            for (FactionPlayer fplayer : alts) {
+                ret += fplayer.getPower();
+            }
+        }
+        if (Conf.powerFactionMax > 0 && ret > Conf.powerFactionMax) {
+            ret = Conf.powerFactionMax;
+        }
+        return ret + this.powerBoost;
+    }
+
+    public double getPowerMax() {
+        if (this.hasPermanentPower()) return this.getPermanentPower();
+        double ret = 0;
+        for (FactionPlayer fplayer : fplayers) ret += fplayer.getPowerMax();
+        for (FactionPlayer fplayer : alts) ret += fplayer.getPowerMax();
+        if (Conf.powerFactionMax > 0 && ret > Conf.powerFactionMax) ret = Conf.powerFactionMax;
+        return ret + this.powerBoost;
+    }
+
+    public int getPowerRounded() {
+        return (int) Math.round(this.getPower());
+    }
+
+    public int getPowerMaxRounded() {
+        return (int) Math.round(this.getPowerMax());
+    }
+
+    public int getLandRounded() {
+        return Board.getInstance().getFactionCoordCount(this);
+    }
+
+    public int getLandRoundedInWorld(String worldName) {
+        return Board.getInstance().getFactionCoordCountInWorld(this, worldName);
+    }
+
+    public int getSize() {
+        return fplayers.size() + alts.size();
+    }
+
+    public Set<FactionPlayer> getFPlayers() {
+        // return a shallow copy of the FPlayer list, to prevent tampering and
+        // concurrency issues
+        return new HashSet<>(fplayers);
+    }
+
+    public Set<FactionPlayer> getAltPlayers() {
+        // return a shallow copy of the FPlayer list, to prevent tampering and
+        // concurrency issues
+        return new HashSet<>(alts);
+    }
+
+    public Set<FactionPlayer> getFPlayersWhereOnline(boolean online) {
+        Set<FactionPlayer> ret = new HashSet<>();
+
+        for (FactionPlayer fplayer : fplayers)
+            if (fplayer.isOnline() == online) ret.add(fplayer);
+
+        return ret;
+    }
+
+    public Set<FactionPlayer> getFPlayersWhereOnline(boolean online, FactionPlayer viewer) {
+        Set<FactionPlayer> ret = new HashSet<>();
+        if (!this.isNormal()) return ret;
+        for (FactionPlayer viewed : fplayers) {
+            // Add if their online status is what we want
+            if (viewed.isOnline() == online) {
+                // If we want online, check to see if we are able to see this player
+                // This checks if they are in vanish.
+                if (online
+                        && viewed.getPlayer() != null
+                        && viewer.getPlayer() != null
+                        && viewer.getPlayer().canSee(viewed.getPlayer())) {
+                    ret.add(viewed);
+                    // If we want offline, just add them.
+                    // Prob a better way to do this but idk.
+                } else if (!online) {
+                    ret.add(viewed);
+                }
+            }
+        }
+        return ret;
+    }
+
+
+    public FactionPlayer getFPlayerAdmin() {
+        if (!this.isNormal()) return null;
+        for (FactionPlayer fplayer : fplayers)
+            if (fplayer.getRole() == Role.LEADER) return fplayer;
+        return null;
+    }
+
+    public FactionPlayer getFPlayerLeader() {
+        return getFPlayerAdmin();
+    }
+
+    public ArrayList<FactionPlayer> getFPlayersWhereRole(Role role) {
+        ArrayList<FactionPlayer> ret = new ArrayList<>();
+        if (!this.isNormal()) return ret;
+
+        for (FactionPlayer fplayer : fplayers)
+            if (fplayer.getRole() == role) ret.add(fplayer);
+        return ret;
+    }
+
+    public ArrayList<Player> getOnlinePlayers() {
+        ArrayList<Player> ret = new ArrayList<>();
+        if (this.isPlayerFreeType()) return ret;
+        for (Player player : FactionsPlugin.getInstance().getServer().getOnlinePlayers()) {
+            FactionPlayer fplayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
+            if (fplayer.getFaction() == this && !fplayer.isAlt()) {
+                ret.add(player);
+            }
+        }
+        return ret;
+    }
+
+    public Map<FLocation, Set<String>> getClaimOwnership() {
+        return claimOwnership;
+    }
+
+    @Override
+    public Map<String, Mission> getMissions() {
+        return this.missions;
+    }
+
+    @Override
+    public List<String> getCompletedMissions() {
+        return this.completedMissions;
+    }
+
+    public int getCountOfClaimsWithOwners() {
+        return claimOwnership.isEmpty() ? 0 : claimOwnership.size();
+    }
+
+    public Set<String> getOwnerList(FLocation loc) {
+        return claimOwnership.get(loc);
+    }
+
+    public String getOwnerListString(FLocation loc) {
+        Set<String> ownerData = claimOwnership.get(loc);
+        if (ownerData == null || ownerData.isEmpty()) return "";
+        StringBuilder ownerList = new StringBuilder();
+
+        for (String anOwnerData : ownerData) {
+            if (ownerList.length() > 0) ownerList.append(", ");
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(anOwnerData));
+            ownerList.append(offlinePlayer != null ? offlinePlayer.getName() : TL.GENERIC_NULLPLAYER.toString());
+        }
+        return ownerList.toString();
+    }
+
+    public Set<FLocation> getAllClaims() {
+        return Board.getInstance().getAllClaims(this);
+    }
+
+
+
+
+    // -------------------------------------------- //
+    // F Permissions stuff
+    // -------------------------------------------- //
+
+    public void setLastDeath(long time) {
+        this.lastDeath = time;
     }
 
     public boolean setPermission(Permissable permissable, PermissableAction permissableAction, Access access) {
@@ -1001,18 +1039,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         }
     }
 
-    /**
-     * Read only map of Permissions.
-     *
-     * @return
-     */
-    public Map<Permissable, Map<PermissableAction, Access>> getPermissions() {
-        return Collections.unmodifiableMap(permissions);
-    }
-
-    public Role getDefaultRole() {
-        return this.defaultRole;
-    }
 
     public void setDefaultRole(Role role) {
         this.defaultRole = role;
@@ -1041,6 +1067,9 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return this.getId().equals("0");
     }
 
+    /* *
+    Returns if the Faction is equals to 0. Being 0 the "Faction" for deaths not related to PvP
+    * */
     public boolean isWilderness() {
         return this.getId().equals("0");
     }
@@ -1066,38 +1095,38 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     // -------------------------------
 
     @Override
-    public String describeTo(RelationParticipator that, boolean ucfirst) {
+    public String describeTo(IRelationParticipator that, boolean ucfirst) {
         return RelationUtil.describeThatToMe(this, that, ucfirst);
     }
 
     @Override
-    public String describeTo(RelationParticipator that) {
+    public String describeTo(IRelationParticipator that) {
         return RelationUtil.describeThatToMe(this, that);
     }
 
     @Override
-    public Relation getRelationTo(RelationParticipator rp) {
+    public Relation getRelationTo(IRelationParticipator rp) {
         return RelationUtil.getRelationTo(this, rp);
     }
 
     @Override
-    public Relation getRelationTo(RelationParticipator rp, boolean ignorePeaceful) {
+    public Relation getRelationTo(IRelationParticipator rp, boolean ignorePeaceful) {
         return RelationUtil.getRelationTo(this, rp, ignorePeaceful);
     }
 
     @Override
-    public ChatColor getColorTo(RelationParticipator rp) {
+    public ChatColor getColorTo(IRelationParticipator rp) {
         return RelationUtil.getColorOfThatToMe(this, rp);
     }
 
-    public Relation getRelationWish(Faction otherFaction) {
+    public Relation getRelationWish(IFaction otherFaction) {
         if (this.relationWish.containsKey(otherFaction.getId())) {
             return this.relationWish.get(otherFaction.getId());
         }
         return Relation.fromString(FactionsPlugin.getInstance().getConfig().getString("default-relation", "neutral")); // Always default to old behavior.
     }
 
-    public void setRelationWish(Faction otherFaction, Relation relation) {
+    public void setRelationWish(IFaction otherFaction, Relation relation) {
         if (this.relationWish.containsKey(otherFaction.getId()) && relation.equals(Relation.NEUTRAL)) {
             this.relationWish.remove(otherFaction.getId());
         } else {
@@ -1107,7 +1136,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
 
     public int getRelationCount(Relation relation) {
         int count = 0;
-        for (Faction faction : Factions.getInstance().getAllFactions()) {
+        for (IFaction faction : Factions.getInstance().getAllFactions()) {
             if (faction.getRelationTo(this) == relation) {
                 count++;
             }
@@ -1115,48 +1144,13 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return count;
     }
 
+
+
+
     // ----------------------------------------------//
     // Power
     // ----------------------------------------------//
-    public double getPower() {
-        if (this.hasPermanentPower()) return this.getPermanentPower();
-        double ret = 0;
-        for (FPlayer fplayer : fplayers) ret += fplayer.getPower();
-        if (FactionsPlugin.getInstance().getConfig().getBoolean("f-alts.Have-Power")) {
-            for (FPlayer fplayer : alts) {
-                ret += fplayer.getPower();
-            }
-        }
-        if (Conf.powerFactionMax > 0 && ret > Conf.powerFactionMax) {
-            ret = Conf.powerFactionMax;
-        }
-        return ret + this.powerBoost;
-    }
 
-    public double getPowerMax() {
-        if (this.hasPermanentPower()) return this.getPermanentPower();
-        double ret = 0;
-        for (FPlayer fplayer : fplayers) ret += fplayer.getPowerMax();
-        for (FPlayer fplayer : alts) ret += fplayer.getPowerMax();
-        if (Conf.powerFactionMax > 0 && ret > Conf.powerFactionMax) ret = Conf.powerFactionMax;
-        return ret + this.powerBoost;
-    }
-
-    public int getPowerRounded() {
-        return (int) Math.round(this.getPower());
-    }
-
-    public int getPowerMaxRounded() {
-        return (int) Math.round(this.getPowerMax());
-    }
-
-    public int getLandRounded() {
-        return Board.getInstance().getFactionCoordCount(this);
-    }
-
-    public int getLandRoundedInWorld(String worldName) {
-        return Board.getInstance().getFactionCoordCountInWorld(this, worldName);
-    }
 
     public boolean hasLandInflation() {
         return this.getLandRounded() > this.getPowerRounded();
@@ -1171,7 +1165,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         fplayers.clear();
         alts.clear();
         if (this.isPlayerFreeType()) return;
-        for (FPlayer fplayer : FPlayers.getInstance().getAllFPlayers()) {
+        for (FactionPlayer fplayer : FactionPlayersManagerBase.getInstance().getAllFPlayers()) {
             if (fplayer.getFactionId().equalsIgnoreCase(id)) {
                 if (fplayer.isAlt()) {
                     alts.add(fplayer);
@@ -1182,104 +1176,23 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         }
     }
 
-    public boolean addFPlayer(FPlayer fplayer) {
+    public boolean addFPlayer(FactionPlayer fplayer) {
         return !this.isPlayerFreeType() && fplayers.add(fplayer);
     }
 
-    public boolean removeFPlayer(FPlayer fplayer) {
+    public boolean removeFPlayer(FactionPlayer fplayer) {
         return !this.isPlayerFreeType() && fplayers.remove(fplayer);
     }
 
 
-    public boolean addAltPlayer(FPlayer fplayer) {
+    public boolean addAltPlayer(FactionPlayer fplayer) {
         return !this.isPlayerFreeType() && alts.add(fplayer);
     }
 
-    public boolean removeAltPlayer(FPlayer fplayer) {
+    public boolean removeAltPlayer(FactionPlayer fplayer) {
         return !this.isPlayerFreeType() && alts.remove(fplayer);
     }
 
-    public int getSize() {
-        return fplayers.size() + alts.size();
-    }
-
-    public Set<FPlayer> getFPlayers() {
-        // return a shallow copy of the FPlayer list, to prevent tampering and
-        // concurrency issues
-        return new HashSet<>(fplayers);
-    }
-
-    public Set<FPlayer> getAltPlayers() {
-        // return a shallow copy of the FPlayer list, to prevent tampering and
-        // concurrency issues
-        return new HashSet<>(alts);
-    }
-
-    public Set<FPlayer> getFPlayersWhereOnline(boolean online) {
-        Set<FPlayer> ret = new HashSet<>();
-
-        for (FPlayer fplayer : fplayers)
-            if (fplayer.isOnline() == online) ret.add(fplayer);
-
-        return ret;
-    }
-
-    public Set<FPlayer> getFPlayersWhereOnline(boolean online, FPlayer viewer) {
-        Set<FPlayer> ret = new HashSet<>();
-        if (!this.isNormal()) return ret;
-        for (FPlayer viewed : fplayers) {
-            // Add if their online status is what we want
-            if (viewed.isOnline() == online) {
-                // If we want online, check to see if we are able to see this player
-                // This checks if they are in vanish.
-                if (online
-                        && viewed.getPlayer() != null
-                        && viewer.getPlayer() != null
-                        && viewer.getPlayer().canSee(viewed.getPlayer())) {
-                    ret.add(viewed);
-                    // If we want offline, just add them.
-                    // Prob a better way to do this but idk.
-                } else if (!online) {
-                    ret.add(viewed);
-                }
-            }
-        }
-        return ret;
-    }
-
-
-    public FPlayer getFPlayerAdmin() {
-        if (!this.isNormal()) return null;
-        for (FPlayer fplayer : fplayers)
-            if (fplayer.getRole() == Role.LEADER) return fplayer;
-        return null;
-    }
-
-    public FPlayer getFPlayerLeader() {
-        return getFPlayerAdmin();
-    }
-
-    public ArrayList<FPlayer> getFPlayersWhereRole(Role role) {
-        ArrayList<FPlayer> ret = new ArrayList<>();
-        if (!this.isNormal()) return ret;
-
-        for (FPlayer fplayer : fplayers)
-            if (fplayer.getRole() == role) ret.add(fplayer);
-        return ret;
-    }
-
-
-    public ArrayList<Player> getOnlinePlayers() {
-        ArrayList<Player> ret = new ArrayList<>();
-        if (this.isPlayerFreeType()) return ret;
-        for (Player player : FactionsPlugin.getInstance().getServer().getOnlinePlayers()) {
-            FPlayer fplayer = FPlayers.getInstance().getByPlayer(player);
-            if (fplayer.getFaction() == this && !fplayer.isAlt()) {
-                ret.add(player);
-            }
-        }
-        return ret;
-    }
 
     // slightly faster check than getOnlinePlayers() if you just want to see if
     // there are any players online
@@ -1289,7 +1202,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
 
 
         for (Player player : FactionsPlugin.getInstance().getServer().getOnlinePlayers()) {
-            FPlayer fplayer = FPlayers.getInstance().getByPlayer(player);
+            FactionPlayer fplayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
             if (fplayer != null && fplayer.getFaction() == this) {
                 return true;
             }
@@ -1314,10 +1227,10 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     public void promoteNewLeader(boolean autoLeave) {
         if (!this.isNormal()) return;
         if (this.isPermanent() && Conf.permanentFactionsDisableLeaderPromotion) return;
-        FPlayer oldLeader = this.getFPlayerAdmin();
+        FactionPlayer oldLeader = this.getFPlayerAdmin();
 
         // get list of moderators, or list of normal members if there are no moderators
-        ArrayList<FPlayer> replacements = this.getFPlayersWhereRole(Role.MODERATOR);
+        ArrayList<FactionPlayer> replacements = this.getFPlayersWhereRole(Role.MODERATOR);
         if (replacements == null || replacements.isEmpty()) replacements = this.getFPlayersWhereRole(Role.NORMAL);
 
 
@@ -1330,13 +1243,6 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
             // no members left and faction isn't permanent, so disband it
             if (Conf.logFactionDisband)
                 Logger.print("The faction " + this.getTag() + " (" + this.getId() + ") has been disbanded since it has no members left" + (autoLeave ? " and by inactivity" : "") + ".", Logger.PrefixType.DEFAULT);
-
-            if (FactionsPlugin.getInstance().getConfig().getBoolean("faction-disband-broadcast")) {
-                String message = TL.COMMAND_DISBAND_BROADCAST_GENERIC.toString()
-                        .replace("{claims}",this.getAllClaims().size()+"");
-                for (FPlayer fplayer : FPlayers.getInstance().getOnlinePlayers())
-                    fplayer.msg(message, this.getTag(fplayer));
-            }
 
 
             FactionDisbandEvent disbandEvent = new FactionDisbandEvent(null, getId(), autoLeave ? PlayerDisbandReason.INACTIVITY : PlayerDisbandReason.LEAVE);
@@ -1365,7 +1271,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     // ----------------------------------------------//
     public void msg(String message, Object... args) {
         message = FactionsPlugin.getInstance().txt.parse(message, args);
-        for (FPlayer fplayer : this.getFPlayersWhereOnline(true)) fplayer.sendMessage(message);
+        for (FactionPlayer fplayer : this.getFPlayersWhereOnline(true)) fplayer.sendMessage(message);
     }
 
     public void msg(TL translation, Object... args) {
@@ -1373,31 +1279,17 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     }
 
     public void sendMessage(String message) {
-        for (FPlayer fplayer : this.getFPlayersWhereOnline(true)) fplayer.sendMessage(message);
+        for (FactionPlayer fplayer : this.getFPlayersWhereOnline(true)) fplayer.sendMessage(message);
     }
 
     public void sendMessage(List<String> messages) {
-        for (FPlayer fplayer : this.getFPlayersWhereOnline(true)) fplayer.sendMessage(messages);
+        for (FactionPlayer fplayer : this.getFPlayersWhereOnline(true)) fplayer.sendMessage(messages);
     }
 
     // ----------------------------------------------//
     // Ownership of specific claims
     // ----------------------------------------------//
 
-    public Map<FLocation, Set<String>> getClaimOwnership() {
-        return claimOwnership;
-    }
-
-
-    @Override
-    public Map<String, Mission> getMissions() {
-        return this.missions;
-    }
-
-    @Override
-    public List<String> getCompletedMissions() {
-        return this.completedMissions;
-    }
 
     public void clearAllClaimOwnership() {
         claimOwnership.clear();
@@ -1407,7 +1299,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         claimOwnership.remove(loc);
     }
 
-    public void clearClaimOwnership(FPlayer player) {
+    public void clearClaimOwnership(FactionPlayer player) {
         if (id == null || id.isEmpty()) return;
         Set<String> ownerData;
 
@@ -1419,9 +1311,7 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         }
     }
 
-    public int getCountOfClaimsWithOwners() {
-        return claimOwnership.isEmpty() ? 0 : claimOwnership.size();
-    }
+
 
     public boolean doesLocationHaveOwnersSet(FLocation loc) {
         if (claimOwnership.isEmpty() || !claimOwnership.containsKey(loc)) return false;
@@ -1429,47 +1319,31 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
         return ownerData != null && !ownerData.isEmpty();
     }
 
-    public boolean isPlayerInOwnerList(FPlayer player, FLocation loc) {
+    public boolean isPlayerInOwnerList(FactionPlayer player, FLocation loc) {
         if (claimOwnership.isEmpty()) return false;
         Set<String> ownerData = claimOwnership.get(loc);
         return ownerData != null && ownerData.contains(player.getId());
     }
 
-    public void setPlayerAsOwner(FPlayer player, FLocation loc) {
+    public void setPlayerAsOwner(FactionPlayer player, FLocation loc) {
         Set<String> ownerData = claimOwnership.get(loc);
         if (ownerData == null) ownerData = new HashSet<>();
         ownerData.add(player.getId());
         claimOwnership.put(loc, ownerData);
     }
 
-    public void removePlayerAsOwner(FPlayer player, FLocation loc) {
+    public void removePlayerAsOwner(FactionPlayer player, FLocation loc) {
         Set<String> ownerData = claimOwnership.get(loc);
         if (ownerData == null) return;
         ownerData.remove(player.getId());
         claimOwnership.put(loc, ownerData);
     }
 
-    public Set<String> getOwnerList(FLocation loc) {
-        return claimOwnership.get(loc);
-    }
 
-    public String getOwnerListString(FLocation loc) {
-        Set<String> ownerData = claimOwnership.get(loc);
-        if (ownerData == null || ownerData.isEmpty()) return "";
-        StringBuilder ownerList = new StringBuilder();
-
-        for (String anOwnerData : ownerData) {
-            if (ownerList.length() > 0) ownerList.append(", ");
-            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(anOwnerData));
-            ownerList.append(offlinePlayer != null ? offlinePlayer.getName() : TL.GENERIC_NULLPLAYER.toString());
-        }
-        return ownerList.toString();
-    }
-
-    public boolean playerHasOwnershipRights(FPlayer fplayer, FLocation loc) {
+    public boolean playerHasOwnershipRights(FactionPlayer fplayer, FLocation loc) {
         // in own faction, with sufficient role or permission to bypass
         // ownership?
-        if (fplayer.getFaction() == this && (fplayer.getRole().isAtLeast(Conf.ownedAreaModeratorsBypass ? Role.MODERATOR : Role.LEADER) || Permission.OWNERSHIP_BYPASS.has(fplayer.getPlayer())))
+        if (fplayer.getFaction() == this && (fplayer.getRole().isAtLeast(Conf.ownedAreaModeratorsBypass ? Role.MODERATOR : Role.LEADER)))
             return true;
 
         // make sure claimOwnership is initialized
@@ -1487,22 +1361,10 @@ public abstract class MemoryFaction implements Faction, EconomyParticipator {
     // Persistance and entity management
     // ----------------------------------------------//
     public void remove() {
-        if (Econ.shouldBeUsed()) Econ.setBalance(getAccountId(), 0.0);
         // Clean the board
         ((MemoryBoard) Board.getInstance()).clean(id);
-        for (FPlayer fPlayer : fplayers) fPlayer.resetFactionData(false);
-        for (FPlayer fPlayer : alts) fPlayer.resetFactionData(false);
+        for (FactionPlayer fPlayer : fplayers) fPlayer.resetFactionData(false);
+        for (FactionPlayer fPlayer : alts) fPlayer.resetFactionData(false);
 
-        try {
-            if (FactionsPlugin.getInstance() != null && FactionsPlugin.getInstance().getFlogManager() != null && FactionsPlugin.getInstance().getFlogManager().getFactionLogMap() != null) {
-                FactionsPlugin.getInstance().getFlogManager().getFactionLogMap().remove(this.getId());
-            }
-        } catch (Exception exception) {
-            // empty catch block
-        }
-    }
-
-    public Set<FLocation> getAllClaims() {
-        return Board.getInstance().getAllClaims(this);
     }
 }

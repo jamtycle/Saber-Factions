@@ -1,8 +1,8 @@
 package com.massivecraft.factions.cmd.grace;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.cmd.Aliases;
 import com.massivecraft.factions.cmd.CommandContext;
@@ -43,7 +43,7 @@ public class CmdGrace extends FCommand {
                     FactionsPlugin.getInstance().getTimerManager().graceTimer.setPaused(false);
                     FactionsPlugin.getInstance().getTimerManager().graceTimer.setRemaining(TimeUnit.DAYS.toMillis(Conf.gracePeriodTimeDays), true);
                     if (Conf.broadcastGraceToggles) {
-                        for (FPlayer follower : FPlayers.getInstance().getOnlinePlayers())
+                        for (IFactionPlayer follower : FactionPlayersManagerBase.getInstance().getOnlinePlayers())
                             follower.msg(TL.COMMAND_GRACE_ENABLED_FORMAT, String.valueOf(TimerManager.getRemaining(FactionsPlugin.getInstance().getTimerManager().graceTimer.getRemaining(), true)));
                     }
                     return;
@@ -53,7 +53,7 @@ public class CmdGrace extends FCommand {
                     FactionsPlugin.getInstance().getTimerManager().graceTimer.setRemaining(TimeUnit.SECONDS.toMillis(0L), true);
                     FactionsPlugin.getInstance().getTimerManager().graceTimer.setPaused(false);
                     if (Conf.broadcastGraceToggles) {
-                        for (FPlayer follower : FPlayers.getInstance().getOnlinePlayers())
+                        for (IFactionPlayer follower : FactionPlayersManagerBase.getInstance().getOnlinePlayers())
                             follower.msg(TL.COMMAND_GRACE_DISABLED_FORMAT);
                     }
                     return;

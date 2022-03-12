@@ -6,7 +6,6 @@ import com.massivecraft.factions.struct.ChatMode;
 import com.massivecraft.factions.struct.Relation;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.util.Logger;
-import com.massivecraft.factions.util.WarmUpUtil;
 import com.massivecraft.factions.zcore.util.TL;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -30,37 +29,21 @@ public class FactionsChatListener implements Listener {
     public void onPlayerEarlyChat(AsyncPlayerChatEvent event) {
         Player talkingPlayer = event.getPlayer();
         String msg = event.getMessage();
-        FPlayer me = FPlayers.getInstance().getByPlayer(talkingPlayer);
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(talkingPlayer);
         ChatMode chat = me.getChatMode();
-
-        // Is the player entering a password for a warp?
-        if (me.isEnteringPassword()) {
-            event.setCancelled(true);
-            me.sendMessage(ChatColor.DARK_GRAY + event.getMessage().replaceAll("(?s).", "*"));
-            if (me.getFaction().isWarpPassword(me.getEnteringWarp(), event.getMessage())) {
-                doWarmup(me.getEnteringWarp(), me);
-            } else {
-                // Invalid Password
-                me.msg(TL.COMMAND_FWARP_INVALID_PASSWORD);
-            }
-            me.setEnteringPassword(false, "");
-            return;
-        }
 
         //Is it a MOD chat
         if (chat == ChatMode.MOD) {
-            Faction myFaction = me.getFaction();
+            IFaction myFaction = me.getFaction();
 
             String message = String.format(Conf.modChatFormat, ChatColor.stripColor(me.getNameAndTag()), msg);
 
             //Send to all mods
             if (me.getRole().isAtLeast(Role.MODERATOR)) {
                 // Iterates only through the factions' members so we enhance performance.
-                for (FPlayer fplayer : myFaction.getFPlayers()) {
+                for (IFactionPlayer fplayer : myFaction.getFPlayers()) {
                     if (fplayer.getRole().isAtLeast(Role.MODERATOR)) {
                         fplayer.sendMessage(message);
-                    } else if (fplayer.isSpyingChat() && me != fplayer) {
-                        fplayer.sendMessage("[MCspy]: " + message);
                     }
                 }
             } else {
@@ -76,7 +59,7 @@ public class FactionsChatListener implements Listener {
 
             event.setCancelled(true);
         } else if (chat == ChatMode.FACTION) {
-            Faction myFaction = me.getFaction();
+            IFaction myFaction = me.getFaction();
 
             String message = String.format(Conf.factionChatFormat, me.describeTo(myFaction), msg);
             myFaction.sendMessage(message);
@@ -84,15 +67,15 @@ public class FactionsChatListener implements Listener {
             Bukkit.getLogger().log(Level.INFO, ChatColor.stripColor("FactionChat " + myFaction.getTag() + ": " + message));
 
             //Send to any players who are spying chat
-            for (FPlayer fplayer : FPlayers.getInstance().getOnlinePlayers()) {
-                if (fplayer.isSpyingChat() && fplayer.getFaction() != myFaction && me != fplayer) {
-                    fplayer.sendMessage("[FCspy] " + myFaction.getTag() + ": " + message);
-                }
-            }
+//            for (FPlayer fplayer : FPlayers.getInstance().getOnlinePlayers()) {
+//                if (fplayer.isSpyingChat() && fplayer.getFaction() != myFaction && me != fplayer) {
+//                    fplayer.sendMessage("[FCspy] " + myFaction.getTag() + ": " + message);
+//                }
+//            }
             FactionChatHandler.sendMessage(FactionsPlugin.getInstance(), myFaction, me.getPlayer().getUniqueId(), me.getPlayer().getName(), event.getMessage());
             event.setCancelled(true);
         } else if (chat == ChatMode.ALLIANCE) {
-            Faction myFaction = me.getFaction();
+            IFaction myFaction = me.getFaction();
 
             String message = String.format(Conf.allianceChatFormat, ChatColor.stripColor(me.getNameAndTag()), msg);
 
@@ -100,11 +83,9 @@ public class FactionsChatListener implements Listener {
             myFaction.sendMessage(message);
 
             //Send to all our allies
-            for (FPlayer fplayer : FPlayers.getInstance().getOnlinePlayers()) {
+            for (IFactionPlayer fplayer : FactionPlayersManagerBase.getInstance().getOnlinePlayers()) {
                 if (myFaction.getRelationTo(fplayer) == Relation.ALLY && !fplayer.isIgnoreAllianceChat()) {
                     fplayer.sendMessage(message);
-                } else if (fplayer.isSpyingChat() && me != fplayer) {
-                    fplayer.sendMessage("[ACspy]: " + message);
                 }
             }
 
@@ -112,7 +93,7 @@ public class FactionsChatListener implements Listener {
 
             event.setCancelled(true);
         } else if (chat == ChatMode.TRUCE) {
-            Faction myFaction = me.getFaction();
+            IFaction myFaction = me.getFaction();
 
             String message = String.format(Conf.truceChatFormat, ChatColor.stripColor(me.getNameAndTag()), msg);
 
@@ -120,11 +101,9 @@ public class FactionsChatListener implements Listener {
             myFaction.sendMessage(message);
 
             //Send to all our truces
-            for (FPlayer fplayer : FPlayers.getInstance().getOnlinePlayers()) {
+            for (IFactionPlayer fplayer : FactionPlayersManagerBase.getInstance().getOnlinePlayers()) {
                 if (myFaction.getRelationTo(fplayer) == Relation.TRUCE) {
                     fplayer.sendMessage(message);
-                } else if (fplayer.isSpyingChat() && fplayer != me) {
-                    fplayer.sendMessage("[TCspy]: " + message);
                 }
             }
 
@@ -147,7 +126,7 @@ public class FactionsChatListener implements Listener {
         Player talkingPlayer = event.getPlayer();
         String msg = event.getMessage();
         String eventFormat = event.getFormat();
-        FPlayer me = FPlayers.getInstance().getByPlayer(talkingPlayer);
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(talkingPlayer);
         int InsertIndex;
 
         if (!Conf.chatTagReplaceString.isEmpty() && eventFormat.contains(Conf.chatTagReplaceString)) {
@@ -182,7 +161,7 @@ public class FactionsChatListener implements Listener {
         // Relation Colored?
         if (Conf.chatTagRelationColored) {
             for (Player listeningPlayer : event.getRecipients()) {
-                FPlayer you = FPlayers.getInstance().getByPlayer(listeningPlayer);
+                IFactionPlayer you = FactionPlayersManagerBase.getInstance().getByPlayer(listeningPlayer);
                 String yourFormat = formatStart + me.getChatTag(you).trim() + formatEnd;
                 try {
                     listeningPlayer.sendMessage(String.format(yourFormat, talkingPlayer.getDisplayName(), msg));
@@ -202,15 +181,4 @@ public class FactionsChatListener implements Listener {
         // Message with no relation color.
         event.setFormat(nonColoredMsgFormat);
     }
-
-    private void doWarmup(final String warp, final FPlayer fme) {
-        WarmUpUtil.process(fme, WarmUpUtil.Warmup.WARP, TL.WARMUPS_NOTIFY_TELEPORT, warp, () -> {
-            Player player = Bukkit.getPlayer(fme.getPlayer().getUniqueId());
-            if (player != null) {
-                player.teleport(fme.getFaction().getWarp(warp).getLocation());
-                fme.msg(TL.COMMAND_FWARP_WARPED, warp);
-            }
-        }, FactionsPlugin.getInstance().getConfig().getLong("warmups.f-warp", 10));
-    }
-
 }

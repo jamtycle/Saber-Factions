@@ -1,7 +1,7 @@
 package com.massivecraft.factions.discord;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.Logger;
 import net.dv8tion.jda.api.JDA;
@@ -24,8 +24,8 @@ import java.util.logging.Level;
 
 public class Discord {
     //We dont want waitingLink to reset during reload so we are going to set it here
-    public static HashMap<Integer, FPlayer> waitingLink;
-    public static HashMap<FPlayer, Integer> waitingLinkk;
+    public static HashMap<Integer, IFactionPlayer> waitingLink;
+    public static HashMap<IFactionPlayer, Integer> waitingLinkk;
     //We want to track the amount of times setup has been tried and the result may be useful for determining issues
     public static HashSet<DiscordSetupAttempt> setupLog;
     public static Boolean confUseDiscord;
@@ -123,7 +123,7 @@ public class Discord {
      * @param f Target as FPlayer
      * @return Translated nickname for Discord as a String
      */
-    public static String getNicknameString(FPlayer f) {
+    public static String getNicknameString(IFactionPlayer f) {
         if (useDiscord) {
             String temp = FactionsPlugin.getInstance().getFileManager().getDiscord().fetchString("Discord.Guild.factionTag");
             if (temp.contains("NAME")) {
@@ -231,7 +231,7 @@ public class Discord {
      *
      * @param f FPlayer target
      */
-    public static void resetNick(FPlayer f) {
+    public static void resetNick(IFactionPlayer f) {
         if (mainGuild == null) {
             return;
         }
@@ -241,11 +241,11 @@ public class Discord {
         mainGuild.modifyNickname(mainGuild.retrieveMember(f.discordUser()).complete(), f.discordUser().getName()).queue();
     }
 
-    public static void changeFactionTag(Faction f, String oldTag) {
+    public static void changeFactionTag(IFaction f, String oldTag) {
         if (!useDiscord | mainGuild == null) {
             return;
         }
-        for (FPlayer fp : f.getFPlayers()) {
+        for (IFactionPlayer fp : f.getFPlayers()) {
             if (fp.discordSetup() && isInMainGuild(fp.discordUser())) {
                 try {
                     Member m = mainGuild.retrieveMember(fp.discordUser()).complete();

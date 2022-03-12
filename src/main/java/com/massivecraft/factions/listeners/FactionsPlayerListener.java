@@ -4,8 +4,6 @@ import com.cryptomorin.xseries.XMaterial;
 import com.massivecraft.factions.*;
 import com.massivecraft.factions.cmd.CmdFGlobal;
 import com.massivecraft.factions.cmd.CmdSeeChunk;
-import com.massivecraft.factions.cmd.FCmdRoot;
-import com.massivecraft.factions.cmd.audit.FLogType;
 import com.massivecraft.factions.cmd.logout.LogoutHandler;
 import com.massivecraft.factions.discord.Discord;
 import com.massivecraft.factions.event.FPlayerEnteredFactionEvent;
@@ -16,7 +14,6 @@ import com.massivecraft.factions.scoreboards.FScoreboard;
 import com.massivecraft.factions.scoreboards.FTeamWrapper;
 import com.massivecraft.factions.scoreboards.sidebar.FDefaultSidebar;
 import com.massivecraft.factions.struct.ChatMode;
-import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Relation;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.util.*;
@@ -76,7 +73,7 @@ public class FactionsPlayerListener implements Listener {
         }
     }
 
-    public static Boolean isSystemFaction(Faction faction) {
+    public static Boolean isSystemFaction(IFaction faction) {
         return faction.isSafeZone() ||
                 faction.isWarZone() ||
                 faction.isWilderness();
@@ -88,14 +85,11 @@ public class FactionsPlayerListener implements Listener {
             return true;
         }
 
-        FPlayer me = FPlayers.getInstance().getByPlayer(player);
-        if (me.isAdminBypassing()) {
-            return true;
-        }
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(player);
 
         FLocation loc = new FLocation(location);
-        Faction otherFaction = Board.getInstance().getFactionAt(loc);
-        Faction myFaction = me.getFaction();
+        IFaction otherFaction = Board.getInstance().getFactionAt(loc);
+        IFaction myFaction = me.getFaction();
         Relation rel = myFaction.getRelationTo(otherFaction);
 
         // Also cancel if player doesn't have ownership rights for this claim
@@ -123,32 +117,12 @@ public class FactionsPlayerListener implements Listener {
         }
 
         if (otherFaction.isWilderness()) {
-            if (!Conf.wildernessDenyUsage || ((Conf.worldsNoWildernessProtection.contains(location.getWorld().getName()) && !Conf.useWorldConfigurationsAsWhitelist) || (!Conf.worldsNoWildernessProtection.contains(location.getWorld().getName()) && Conf.useWorldConfigurationsAsWhitelist)) ) {
+            if (!Conf.wildernessDenyUsage || ((Conf.worldsNoWildernessProtection.contains(location.getWorld().getName()) && !Conf.useWorldConfigurationsAsWhitelist) || (!Conf.worldsNoWildernessProtection.contains(location.getWorld().getName()) && Conf.useWorldConfigurationsAsWhitelist))) {
                 return true; // This is not faction territory. Use whatever you like here.
             }
 
             if (!justCheck) {
                 me.msg(TL.PLAYER_USE_WILDERNESS, TextUtil.getMaterialName(material));
-            }
-
-            return false;
-        } else if (otherFaction.isSafeZone()) {
-            if (!Conf.safeZoneDenyUsage || Permission.MANAGE_SAFE_ZONE.has(player)) {
-                return true;
-            }
-
-            if (!justCheck) {
-                me.msg(TL.PLAYER_USE_SAFEZONE, TextUtil.getMaterialName(material));
-            }
-
-            return false;
-        } else if (otherFaction.isWarZone()) {
-            if (!Conf.warZoneDenyUsage || Permission.MANAGE_WAR_ZONE.has(player)) {
-                return true;
-            }
-
-            if (!justCheck) {
-                me.msg(TL.PLAYER_USE_WARZONE, TextUtil.getMaterialName(material));
             }
 
             return false;
@@ -163,29 +137,26 @@ public class FactionsPlayerListener implements Listener {
         }
 
         Access access = otherFaction.getAccess(me, permissableAction);
-        return CheckPlayerAccess(player, me, loc, otherFaction, access, permissableAction, false);
+        return CheckPlayerAccess(player, me, loc, otherFaction, access, permissableAction);
     }
 
     public static boolean canPlayerUseBlock(Player player, Block block, boolean justCheck) {
         if (Conf.playersWhoBypassAllProtection.contains(player.getName()))
             return true;
 
-        FPlayer me = FPlayers.getInstance().getByPlayer(player);
-        if (me.isAdminBypassing())
-            return true;
-
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(player);
         Material material = block.getType();
 
         // Dupe fix.
         FLocation loc = new FLocation(block);
-        Faction otherFaction = Board.getInstance().getFactionAt(loc);
-        Faction myFaction = me.getFaction();
+        IFaction otherFaction = Board.getInstance().getFactionAt(loc);
+        IFaction myFaction = me.getFaction();
 
         // no door/chest/whatever protection in wilderness, war zones, or safe zones
         if (otherFaction.isSystemFaction()) return true;
         if (myFaction.isWilderness()) {
-            if(block.getType().name().contains("PLATE")) {
-                if(!Cooldown.isOnCooldown(player, "plateMessage")) {
+            if (block.getType().name().contains("PLATE")) {
+                if (!Cooldown.isOnCooldown(player, "plateMessage")) {
                     Cooldown.setCooldown(player, "plateMessage", 3);
                 } else {
                     return false;
@@ -216,15 +187,16 @@ public class FactionsPlayerListener implements Listener {
 
         // Move up access check to check for exceptions
         if (!otherFaction.getId().equals(myFaction.getId())) { // If the faction target is not my own
-            // Get faction pain build access relation to me
-            boolean pain = !justCheck && otherFaction.getAccess(me, PermissableAction.PAIN_BUILD) == Access.ALLOW;
-            return CheckPlayerAccess(player, me, loc, otherFaction, otherFaction.getAccess(me, action), action, pain);
+            return CheckPlayerAccess(player, me, loc, otherFaction, otherFaction.getAccess(me, action), action);
         } else if (otherFaction.getId().equals(myFaction.getId())) {
-            return CheckPlayerAccess(player, me, loc, myFaction, myFaction.getAccess(me, action), action, (!justCheck && myFaction.getAccess(me, PermissableAction.PAIN_BUILD) == Access.ALLOW));
+            return CheckPlayerAccess(player, me, loc, myFaction, myFaction.getAccess(me, action), action);
         }
-        return CheckPlayerAccess(player, me, loc, myFaction, otherFaction.getAccess(me, action), action, Conf.territoryPainBuild);
+        return CheckPlayerAccess(player, me, loc, myFaction, otherFaction.getAccess(me, action), action);
     }
 
+    /* *
+    This method is in serious observation, I don't know what it does, but I don't like it.
+    * */
     public static boolean preventCommand(String fullCmd, Player player) {
         if ((Conf.territoryNeutralDenyCommands.isEmpty() && Conf.territoryEnemyDenyCommands.isEmpty() && Conf.permanentFactionMemberDenyCommands.isEmpty() && Conf.warzoneDenyCommands.isEmpty())) {
             return false;
@@ -232,7 +204,7 @@ public class FactionsPlayerListener implements Listener {
 
         fullCmd = fullCmd.toLowerCase();
 
-        FPlayer me = FPlayers.getInstance().getByPlayer(player);
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(player);
 
         String shortCmd;  // command without the slash at the beginning
         if (fullCmd.startsWith("/")) {
@@ -242,8 +214,7 @@ public class FactionsPlayerListener implements Listener {
             fullCmd = "/" + fullCmd;
         }
 
-        if (me.hasFaction() &&
-                !me.isAdminBypassing() &&
+        if (me.getHasFaction() &&
                 !Conf.permanentFactionMemberDenyCommands.isEmpty() &&
                 me.getFaction().isPermanent() &&
                 isCommandInList(fullCmd, shortCmd, Conf.permanentFactionMemberDenyCommands.iterator())) {
@@ -251,29 +222,29 @@ public class FactionsPlayerListener implements Listener {
             return true;
         }
 
-        Faction at = Board.getInstance().getFactionAt(new FLocation(player.getLocation()));
-        if (at.isWilderness() && !Conf.wildernessDenyCommands.isEmpty() && !me.isAdminBypassing() && isCommandInList(fullCmd, shortCmd, Conf.wildernessDenyCommands.iterator())) {
+        IFaction at = Board.getInstance().getFactionAt(new FLocation(player.getLocation()));
+        if (at.isWilderness() && !Conf.wildernessDenyCommands.isEmpty() && isCommandInList(fullCmd, shortCmd, Conf.wildernessDenyCommands.iterator())) {
             me.msg(TL.PLAYER_COMMAND_WILDERNESS, fullCmd);
             return true;
         }
 
         Relation rel = at.getRelationTo(me);
-        if (at.isNormal() && rel.isAlly() && !Conf.territoryAllyDenyCommands.isEmpty() && !me.isAdminBypassing() && isCommandInList(fullCmd, shortCmd, Conf.territoryAllyDenyCommands.iterator())) {
+        if (at.isNormal() && rel.isAlly() && !Conf.territoryAllyDenyCommands.isEmpty() && isCommandInList(fullCmd, shortCmd, Conf.territoryAllyDenyCommands.iterator())) {
             me.msg(TL.PLAYER_COMMAND_ALLY, fullCmd);
             return true;
         }
 
-        if (at.isNormal() && rel.isNeutral() && !Conf.territoryNeutralDenyCommands.isEmpty() && !me.isAdminBypassing() && isCommandInList(fullCmd, shortCmd, Conf.territoryNeutralDenyCommands.iterator())) {
+        if (at.isNormal() && rel.isNeutral() && !Conf.territoryNeutralDenyCommands.isEmpty() && isCommandInList(fullCmd, shortCmd, Conf.territoryNeutralDenyCommands.iterator())) {
             me.msg(TL.PLAYER_COMMAND_NEUTRAL, fullCmd);
             return true;
         }
 
-        if (at.isNormal() && rel.isEnemy() && !Conf.territoryEnemyDenyCommands.isEmpty() && !me.isAdminBypassing() && isCommandInList(fullCmd, shortCmd, Conf.territoryEnemyDenyCommands.iterator())) {
+        if (at.isNormal() && rel.isEnemy() && !Conf.territoryEnemyDenyCommands.isEmpty() && isCommandInList(fullCmd, shortCmd, Conf.territoryEnemyDenyCommands.iterator())) {
             me.msg(TL.PLAYER_COMMAND_ENEMY, fullCmd);
             return true;
         }
 
-        if (at.isWarZone() && !Conf.warzoneDenyCommands.isEmpty() && !me.isAdminBypassing() && isCommandInList(fullCmd, shortCmd, Conf.warzoneDenyCommands.iterator())) {
+        if (at.isWarZone() && !Conf.warzoneDenyCommands.isEmpty()  && isCommandInList(fullCmd, shortCmd, Conf.warzoneDenyCommands.iterator())) {
             me.msg(TL.PLAYER_COMMAND_WARZONE, fullCmd);
             return true;
         }
@@ -298,15 +269,13 @@ public class FactionsPlayerListener implements Listener {
         return false;
     }
 
-    private static boolean CheckPlayerAccess(Player player, FPlayer me, FLocation loc, Faction factionToCheck, Access access, PermissableAction action, boolean pain) {
-        boolean doPain = pain || Conf.handleExploitInteractionSpam; // Painbuild should take priority. But we want to use exploit interaction as well.
+    private static boolean CheckPlayerAccess(Player player, IFactionPlayer me, FLocation loc, IFaction factionToCheck, Access access, PermissableAction action) {
         if (access != null) {
             boolean landOwned = (factionToCheck.doesLocationHaveOwnersSet(loc) && !factionToCheck.getOwnerList(loc).isEmpty());
             if ((landOwned && factionToCheck.getOwnerListString(loc).contains(player.getName())) || (me.getRole() == Role.LEADER && me.getFactionId().equals(factionToCheck.getId()))) {
                 return true;
             } else if (landOwned && !factionToCheck.getOwnerListString(loc).contains(player.getName())) {
                 me.msg(TL.ACTIONS_OWNEDTERRITORYDENY.toString().replace("{owners}", factionToCheck.getOwnerListString(loc)));
-                if (doPain) player.damage(Conf.actionDeniedPainAmount);
                 return false;
             } else if (!landOwned && access == Access.ALLOW) {
                 return true;
@@ -374,7 +343,7 @@ public class FactionsPlayerListener implements Listener {
 
     private void initPlayer(Player player) {
         // Make sure that all online players do have a fplayer.
-        FPlayer me = FPlayers.getInstance().getByPlayer(player);
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(player);
         ((MemoryFPlayer) me).setName(player.getName());
 
         // Update the lastLoginTime for this fplayer
@@ -395,9 +364,9 @@ public class FactionsPlayerListener implements Listener {
             FScoreboard.get(me).setSidebarVisibility(me.showScoreboard());
         }
 
-        Faction myFaction = me.getFaction();
+        IFaction myFaction = me.getFaction();
         if (!myFaction.isWilderness()) {
-            for (FPlayer other : myFaction.getFPlayersWhereOnline(true)) {
+            for (IFactionPlayer other : myFaction.getFPlayersWhereOnline(true)) {
                 if (other != me && other.isMonitoringJoins()) other.msg(TL.FACTION_LOGIN, me.getName());
             }
         }
@@ -405,24 +374,7 @@ public class FactionsPlayerListener implements Listener {
         fallMap.put(me.getPlayer(), false);
         Bukkit.getScheduler().scheduleSyncDelayedTask(FactionsPlugin.instance, () -> fallMap.remove(me.getPlayer()), 180L);
 
-        if (me.isSpyingChat() && !player.hasPermission(Permission.CHATSPY.node)) {
-            me.setSpyingChat(false);
-            Logger.printArgs( "Found %s spying chat without permission on login. Disabled their chat spying.", Logger.PrefixType.DEFAULT, player.getName());
-        }
-
-        if (me.isAdminBypassing() && !player.hasPermission(Permission.BYPASS.node)) {
-            me.setIsAdminBypassing(false);
-            Logger.printArgs( "Found %s on admin Bypass without permission on login. Disabled it for them.", Logger.PrefixType.DEFAULT, player.getName());
-        }
-
-        me.setAutoLeave(!player.hasPermission(Permission.AUTO_LEAVE_BYPASS.node));
-        me.setTakeFallDamage(true);
-
-        if (FCmdRoot.instance.fFlyEnabled && me.isFlying()) {
-            me.setFlying(false);
-        }
-
-        if(LunarAPI.isLunarAPIEnabled()) {
+        if (LunarAPI.isLunarAPIEnabled()) {
             LunarAPI.sendHomeWaypoint(me);
         }
 
@@ -443,7 +395,7 @@ public class FactionsPlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        FPlayer me = FPlayers.getInstance().getByPlayer(event.getPlayer());
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(event.getPlayer());
 
         // and update their last login time to point to when the logged off, for auto-remove routine
         me.setLastLoginTime(System.currentTimeMillis());
@@ -454,17 +406,17 @@ public class FactionsPlayerListener implements Listener {
 
         // if player is waiting for fstuck teleport but leaves, remove
         if (FactionsPlugin.instance.getStuckMap().containsKey(me.getPlayer().getUniqueId())) {
-            FPlayers.getInstance().getByPlayer(me.getPlayer()).msg(TL.COMMAND_STUCK_CANCELLED);
+            FactionPlayersManagerBase.getInstance().getByPlayer(me.getPlayer()).msg(TL.COMMAND_STUCK_CANCELLED);
             FactionsPlugin.instance.getStuckMap().remove(me.getPlayer().getUniqueId());
             FactionsPlugin.instance.getTimers().remove(me.getPlayer().getUniqueId());
         }
 
 
-        Faction myFaction = me.getFaction();
+        IFaction myFaction = me.getFaction();
         if (!myFaction.isWilderness()) myFaction.memberLoggedOff();
 
         if (!myFaction.isWilderness()) {
-            for (FPlayer player : myFaction.getFPlayersWhereOnline(true))
+            for (IFactionPlayer player : myFaction.getFPlayersWhereOnline(true))
                 if (player != me && player.isMonitoringJoins()) player.msg(TL.FACTION_LOGOUT, me.getName());
 
         }
@@ -475,9 +427,10 @@ public class FactionsPlayerListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        FPlayer me = FPlayers.getInstance().getByPlayer(player);
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(player);
 
-        if(!ChunkReference.isSameBlock(event)) {
+        //Warmup is in serious problems if they don't do anything interesting.
+        if (!ChunkReference.isSameBlock(event)) {
             VisualizeUtil.clear(event.getPlayer());
             if (me.isWarmingUp()) {
                 me.clearWarmup();
@@ -485,53 +438,19 @@ public class FactionsPlayerListener implements Listener {
             }
         }
 
-        if(ChunkReference.isSameChunk(event)) {
-            return;
-        }
+        if (ChunkReference.isSameChunk(event)) return;
 
-            // Did we change coord?
+        // Did we change coord?
         FLocation from = me.getLastStoodAt();
         FLocation to = new FLocation(event.getTo());
 
-        if (from.equals(to)) {
-            return;
-        }
+        if (from.equals(to)) return;
 
         me.setLastStoodAt(to);
 
-        Faction at = Board.getInstance().getFactionAt(new FLocation(me.getPlayer().getLocation()));
-        if(me.getPlayer().getGameMode() != GameMode.SPECTATOR) { //To Disable Roam Plugins w/AutoClaim On
-            if (me.getAutoClaimFor() != null) {
-                if (FactionsPlugin.cachedRadiusClaim && me.attemptClaim(me.getFaction(), me.getPlayer().getLocation(), true)) {
-                    me.getFaction().getFPlayersWhereOnline(true).forEach(f -> f.msg(TL.CLAIM_CLAIMED, me.describeTo(f, true), me.getFaction().describeTo(f), at.describeTo(f)));
-                } else {
-                    me.attemptClaim(me.getAutoClaimFor(), me.getPlayer().getLocation(), true);
-                }
-                FactionsPlugin.instance.logFactionEvent(me.getAutoClaimFor(), FLogType.CHUNK_CLAIMS, me.getName(), CC.GreenB + "CLAIMED", String.valueOf(1), (new FLocation(player.getLocation())).formatXAndZ(","));
-            } else if (me.isAutoSafeClaimEnabled()) {
-                if (!Permission.MANAGE_SAFE_ZONE.has(player)) {
-                    me.setIsAutoSafeClaimEnabled(false);
-                } else {
-                    if (!Board.getInstance().getFactionAt(to).isSafeZone()) {
-                        Board.getInstance().setFactionAt(Factions.getInstance().getSafeZone(), to);
-                        me.msg(TL.PLAYER_SAFEAUTO);
-                    }
-                }
-            } else if (me.isAutoWarClaimEnabled()) {
-                if (!Permission.MANAGE_WAR_ZONE.has(player)) {
-                    me.setIsAutoWarClaimEnabled(false);
-                } else {
-                    if (!Board.getInstance().getFactionAt(to).isWarZone()) {
-                        Board.getInstance().setFactionAt(Factions.getInstance().getWarZone(), to);
-                        me.msg(TL.PLAYER_WARAUTO);
-                    }
-                }
-            }
-        }
-
         // Did we change "host"(faction)?
-        Faction factionFrom = Board.getInstance().getFactionAt(from);
-        Faction factionTo = Board.getInstance().getFactionAt(to);
+        IFaction factionFrom = Board.getInstance().getFactionAt(from);
+        IFaction factionTo = Board.getInstance().getFactionAt(to);
         boolean changedFaction = (factionFrom != factionTo);
 
         if (changedFaction) {
@@ -541,31 +460,32 @@ public class FactionsPlayerListener implements Listener {
             }
         }
 
-        if (me.isMapAutoUpdating()) {
-            if (!showTimes.containsKey(player.getUniqueId()) || (showTimes.get(player.getUniqueId()) < System.currentTimeMillis())) {
-                me.sendFancyMessage(Board.getInstance().getMap(me, to, player.getLocation().getYaw()));
-                showTimes.put(player.getUniqueId(), System.currentTimeMillis() + FactionsPlugin.getInstance().getConfig().getInt("findfactionsexploit.cooldown"));
-            }
-        } else {
-            Faction myFaction = me.getFaction();
-            String ownersTo = myFaction.getOwnerListString(to);
-
-            if (changedFaction) {
-                me.sendFactionHereMessage(factionFrom);
-                if (Conf.ownedAreasEnabled && Conf.ownedMessageOnBorder && myFaction == factionTo && !ownersTo.isEmpty()) {
-                    me.sendMessage(TL.GENERIC_OWNERS.format(ownersTo));
-                }
-            } else if (Conf.ownedAreasEnabled && Conf.ownedMessageInsideTerritory && myFaction == factionTo && !myFaction.isWilderness()) {
-                String ownersFrom = myFaction.getOwnerListString(from);
-                if (Conf.ownedMessageByChunk || !ownersFrom.equals(ownersTo)) {
-                    if (!ownersTo.isEmpty()) {
-                        me.sendMessage(TL.GENERIC_OWNERS.format(ownersTo));
-                    } else if (!TL.GENERIC_PUBLICLAND.toString().isEmpty()) {
-                        me.sendMessage(TL.GENERIC_PUBLICLAND.toString());
-                    }
-                }
-            }
-        }
+        // Not sure if the "else" is map related
+//        if (me.isMapAutoUpdating()) {
+//            if (!showTimes.containsKey(player.getUniqueId()) || (showTimes.get(player.getUniqueId()) < System.currentTimeMillis())) {
+//                me.sendFancyMessage(Board.getInstance().getMap(me, to, player.getLocation().getYaw()));
+//                showTimes.put(player.getUniqueId(), System.currentTimeMillis() + FactionsPlugin.getInstance().getConfig().getInt("findfactionsexploit.cooldown"));
+//            }
+//        } else {
+//            Faction myFaction = me.getFaction();
+//            String ownersTo = myFaction.getOwnerListString(to);
+//
+//            if (changedFaction) {
+//                me.sendFactionHereMessage(factionFrom);
+//                if (Conf.ownedAreasEnabled && Conf.ownedMessageOnBorder && myFaction == factionTo && !ownersTo.isEmpty()) {
+//                    me.sendMessage(TL.GENERIC_OWNERS.format(ownersTo));
+//                }
+//            } else if (Conf.ownedAreasEnabled && Conf.ownedMessageInsideTerritory && myFaction == factionTo && !myFaction.isWilderness()) {
+//                String ownersFrom = myFaction.getOwnerListString(from);
+//                if (Conf.ownedMessageByChunk || !ownersFrom.equals(ownersTo)) {
+//                    if (!ownersTo.isEmpty()) {
+//                        me.sendMessage(TL.GENERIC_OWNERS.format(ownersTo));
+//                    } else if (!TL.GENERIC_PUBLICLAND.toString().isEmpty()) {
+//                        me.sendMessage(TL.GENERIC_PUBLICLAND.toString());
+//                    }
+//                }
+//            }
+//        }
     }
 
     ////inspect
@@ -612,22 +532,9 @@ public class FactionsPlayerListener implements Listener {
     //    }
     //}
 
-    //For disabling enderpearl throws
-    @EventHandler
-    public void onPearl(PlayerInteractEvent e) {
-        Player player = e.getPlayer();
-        if (player.getItemInHand().getType() == Material.ENDER_PEARL) {
-            FPlayer fPlayer = FPlayers.getInstance().getByPlayer(player);
-            if (fPlayer.isFlying() && Conf.noEnderpearlsInFly) {
-                fPlayer.msg(TL.COMMAND_FLY_NO_EPEARL);
-                e.setCancelled(true);
-            }
-        }
-    }
-
     @EventHandler
     public void onClose(InventoryCloseEvent e) {
-        FPlayer fme = FPlayers.getInstance().getById(e.getPlayer().getUniqueId().toString());
+        IFactionPlayer fme = FactionPlayersManagerBase.getInstance().getById(e.getPlayer().getUniqueId().toString());
         if (fme.isInVault()) fme.setInVault(false);
         if (fme.isInFactionsChest()) fme.setInFactionsChest(false);
     }
@@ -700,8 +607,8 @@ public class FactionsPlayerListener implements Listener {
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK && block.getType() == XMaterial.GRASS_BLOCK.parseMaterial()
                 && event.hasItem() && event.getItem().getType() == XMaterial.BONE_MEAL.parseMaterial()) {
             if (!FactionsBlockListener.playerCanBuildDestroyBlock(event.getPlayer(), block.getLocation(), "build", true)) {
-                FPlayer me = FPlayers.getInstance().getById(event.getPlayer().getUniqueId().toString());
-                Faction myFaction = me.getFaction();
+                IFactionPlayer me = FactionPlayersManagerBase.getInstance().getById(event.getPlayer().getUniqueId().toString());
+                IFaction myFaction = me.getFaction();
 
                 me.msg(TL.ACTIONS_NOPERMISSION.toString().replace("{faction}", myFaction.getTag(me.getFaction())).replace("{action}", "use bone meal"));
                 event.setCancelled(true);
@@ -711,7 +618,7 @@ public class FactionsPlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        FPlayer me = FPlayers.getInstance().getByPlayer(event.getPlayer());
+        IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(event.getPlayer());
 
         me.getPower();  // update power, so they won't have gained any while dead
 
@@ -719,7 +626,7 @@ public class FactionsPlayerListener implements Listener {
         if (Conf.homesEnabled &&
                 Conf.homesTeleportToOnDeath &&
                 home != null &&
-                (Conf.homesRespawnFromNoPowerLossWorlds || ( (!Conf.worldsNoPowerLoss.contains(event.getPlayer().getWorld().getName()) && !Conf.useWorldConfigurationsAsWhitelist) || (Conf.worldsNoPowerLoss.contains(event.getPlayer().getWorld().getName()) && Conf.useWorldConfigurationsAsWhitelist) ) )) {
+                (Conf.homesRespawnFromNoPowerLossWorlds || ((!Conf.worldsNoPowerLoss.contains(event.getPlayer().getWorld().getName()) && !Conf.useWorldConfigurationsAsWhitelist) || (Conf.worldsNoPowerLoss.contains(event.getPlayer().getWorld().getName()) && Conf.useWorldConfigurationsAsWhitelist)))) {
             event.setRespawnLocation(home);
         }
     }
@@ -759,36 +666,6 @@ public class FactionsPlayerListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onTeleportChange(PlayerTeleportEvent event) {
-        FPlayer me = FPlayers.getInstance().getByPlayer(event.getPlayer());
-
-        FLocation to = new FLocation(Objects.requireNonNull(event.getTo()));
-        me.setLastStoodAt(to);
-
-        // Check the location they're teleporting to and check if they can fly there.
-        if (FCmdRoot.instance.fFlyEnabled && !me.isAdminBypassing()) {
-            boolean canFly = me.canFlyAtLocation(to);
-            if (me.isFlying() && !canFly) {
-                me.setFlying(false, false);
-            } else if (me.isAutoFlying() && !me.isFlying() && canFly) {
-                me.setFlying(true);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onTeleport(PlayerTeleportEvent e) {
-        Player player = e.getPlayer();
-
-        if (player == null) return;
-        LogoutHandler handler = LogoutHandler.getByName(player.getName());
-        if (handler.isLogoutActive(player)) {
-            handler.cancelLogout(player);
-            player.sendMessage(String.valueOf(TL.COMMAND_LOGOUT_TELEPORTED));
-        }
-    }
-
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteractGUI(InventoryClickEvent event) {
         if (event.getClickedInventory() == null) return;
@@ -805,13 +682,13 @@ public class FactionsPlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerKick(PlayerKickEvent event) {
-        FPlayer badGuy = FPlayers.getInstance().getByPlayer(event.getPlayer());
+        IFactionPlayer badGuy = FactionPlayersManagerBase.getInstance().getByPlayer(event.getPlayer());
         if (badGuy == null) return;
 
         // if player was banned (not just kicked), get rid of their stored info
         if (Conf.removePlayerDataWhenBanned && event.getReason().equals(Conf.removePlayerDataWhenBannedReason)) {
             if (badGuy.getRole() == Role.LEADER) badGuy.getFaction().promoteNewLeader();
-            badGuy.leave(false);
+            badGuy.leave();
             badGuy.remove();
         }
     }
@@ -836,13 +713,13 @@ public class FactionsPlayerListener implements Listener {
 
         if (CmdFGlobal.toggled.contains(p.getUniqueId())) {
             //they're muted, check status of Faction Chat
-            if (FPlayers.getInstance().getByPlayer(p).getFaction() == null) {
+            if (FactionPlayersManagerBase.getInstance().getByPlayer(p).getFaction() == null) {
                 //they're muted, and not in a faction, cancel and return
                 e.setCancelled(true);
                 return;
             } else {
                 //are in a faction that's not Wilderness, SafeZone, or Warzone, check their chat status
-                if (!FPlayers.getInstance().getByPlayer(p).getChatMode().isAtLeast(ChatMode.ALLIANCE)) {
+                if (!FactionPlayersManagerBase.getInstance().getByPlayer(p).getChatMode().isAtLeast(ChatMode.ALLIANCE)) {
                     //their Faction Chat Mode is not at-least a Alliance, cancel and return
                     e.setCancelled(true);
                     return;
@@ -867,7 +744,7 @@ public class FactionsPlayerListener implements Listener {
 
     @EventHandler
     public void onDisconnect(PlayerQuitEvent e) {
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(e.getPlayer());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(e.getPlayer());
         if (fPlayer.isInFactionsChest()) fPlayer.setInFactionsChest(false);
     }
 
@@ -881,14 +758,14 @@ public class FactionsPlayerListener implements Listener {
         if (msg.length == 0 | !msg[msg.length - 1].contains("@")) {
             return;
         }
-        FPlayer fp = FPlayers.getInstance().getByPlayer(e.getPlayer());
+        IFactionPlayer fp = FactionPlayersManagerBase.getInstance().getByPlayer(e.getPlayer());
 
         if (fp == null) return;
 
         if (fp.getChatMode() != ChatMode.FACTION) {
             return;
         }
-        Faction f = fp.getFaction();
+        IFaction f = fp.getFaction();
         if (f == null) return;
         if (f.isSystemFaction()) {
             return;

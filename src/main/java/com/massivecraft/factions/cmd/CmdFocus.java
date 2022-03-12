@@ -1,6 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.scoreboards.FTeamWrapper;
 import com.massivecraft.factions.struct.Permission;
@@ -29,7 +29,7 @@ public class CmdFocus extends FCommand {
             context.msg(TL.GENERIC_DISABLED, "Faction Focus");
             return;
         }
-        FPlayer target = context.argAsFPlayer(0);
+        IFactionPlayer target = context.argAsFPlayer(0);
         if (target == null) {
             return;
         }

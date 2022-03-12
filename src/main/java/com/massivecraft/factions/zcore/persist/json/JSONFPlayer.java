@@ -1,7 +1,7 @@
 package com.massivecraft.factions.zcore.persist.json;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.zcore.persist.MemoryFPlayer;
 
 public class JSONFPlayer extends MemoryFPlayer {
@@ -16,10 +16,10 @@ public class JSONFPlayer extends MemoryFPlayer {
 
     @Override
     public void remove() {
-        ((JSONFPlayers) FPlayers.getInstance()).fPlayers.remove(getId());
+        ((JSONFPlayers) FactionPlayersManagerBase.getInstance()).fPlayers.remove(getId());
     }
 
     public boolean shouldBeSaved() {
-        return this.hasFaction() || (this.getPowerRounded() != this.getPowerMaxRounded() && this.getPowerRounded() != (int) Math.round(Conf.powerPlayerStarting));
+        return this.getHasFaction() || (this.getPowerRounded() != this.getPowerMaxRounded() && this.getPowerRounded() != (int) Math.round(Conf.powerPlayerStarting));
     }
 }

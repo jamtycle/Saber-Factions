@@ -1,14 +1,14 @@
 package com.massivecraft.factions.event;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.struct.Role;
 import org.bukkit.event.Cancellable;
 
 /**
  * Represents {@link Role} change of a factions player
  *
- * @see FPlayer#getRole()
+ * @see IFactionPlayer#getRole()
  */
 public class FPlayerRoleChangeEvent extends FactionPlayerEvent implements Cancellable {
 
@@ -20,13 +20,13 @@ public class FPlayerRoleChangeEvent extends FactionPlayerEvent implements Cancel
     private boolean cancelled;
     private Role to;
 
-    public FPlayerRoleChangeEvent(Faction faction, FPlayer fPlayer, Role from, Role to) {
+    public FPlayerRoleChangeEvent(IFaction faction, IFactionPlayer fPlayer, Role from, Role to) {
         super(faction, fPlayer);
         this.from = from;
         this.to = to;
     }
 
-    public FPlayerRoleChangeEvent(Faction faction, FPlayer fPlayer, Role to) {
+    public FPlayerRoleChangeEvent(IFaction faction, IFactionPlayer fPlayer, Role to) {
         this(faction, fPlayer, fPlayer.getRole(), to);
     }
 

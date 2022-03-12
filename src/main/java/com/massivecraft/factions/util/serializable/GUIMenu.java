@@ -5,8 +5,8 @@ package com.massivecraft.factions.util.serializable;
  */
 
 import com.google.common.collect.Lists;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.util.Logger;
@@ -74,10 +74,10 @@ public abstract class GUIMenu {
 
     public abstract void drawItems();
 
-    private boolean canEditPermissions(Faction faction, FPlayer player) {
+    private boolean canEditPermissions(IFaction faction, IFactionPlayer player) {
         Role role = player.getRole();
         if (role != null && role.isAtLeast(Role.COLEADER)) {
-            Faction theirfac = player.getFaction();
+            IFaction theirfac = player.getFaction();
             return theirfac != null && theirfac.isNormal() && theirfac.equals(faction);
         }
 

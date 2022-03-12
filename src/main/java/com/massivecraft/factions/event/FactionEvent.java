@@ -1,8 +1,10 @@
 package com.massivecraft.factions.event;
 
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
+import com.massivecraft.factions.mysql.Faction;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an event involving a Faction.
@@ -16,8 +18,8 @@ public class FactionEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
     private final Faction faction;
 
-    public FactionEvent(Faction faction) {
-        this.faction = faction;
+    public FactionEvent(Faction _faction){
+        faction = _faction;
     }
 
     public static HandlerList getHandlerList() {
@@ -29,10 +31,17 @@ public class FactionEvent extends Event {
      *
      * @return faction involved in the event.
      */
-    public Faction getFaction() {
-        return this.faction;
+//    @Deprecated
+//    public IFaction getFaction() {
+//        return null;
+////        return this.faction;
+//    }
+
+    public Faction getFaction(){
+        return faction;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;

@@ -3,8 +3,8 @@ package com.massivecraft.factions.zcore.persist.json;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.Logger;
 import com.massivecraft.factions.zcore.persist.MemoryFPlayer;
@@ -41,7 +41,7 @@ public class JSONFPlayers extends MemoryFPlayers {
     public void convertFrom(MemoryFPlayers old) {
         this.fPlayers.putAll(Maps.transformValues(old.fPlayers, arg0 -> new JSONFPlayer((MemoryFPlayer) arg0)));
         forceSave();
-        FPlayers.instance = this;
+        FactionPlayersManagerBase.instance = this;
     }
 
     public void forceSave() {
@@ -50,7 +50,7 @@ public class JSONFPlayers extends MemoryFPlayers {
 
     public void forceSave(boolean sync) {
         final Map<String, JSONFPlayer> entitiesThatShouldBeSaved = new HashMap<>();
-        for (FPlayer entity : this.fPlayers.values()) {
+        for (IFactionPlayer entity : this.fPlayers.values()) {
             if (((MemoryFPlayer) entity).shouldBeSaved()) {
                 entitiesThatShouldBeSaved.put(entity.getId(), (JSONFPlayer) entity);
             }
@@ -177,8 +177,8 @@ public class JSONFPlayers extends MemoryFPlayers {
     }
 
     @Override
-    public FPlayer generateFPlayer(String id) {
-        FPlayer player = new JSONFPlayer(id);
+    public IFactionPlayer generateFPlayer(String id) {
+        IFactionPlayer player = new JSONFPlayer(id);
         this.fPlayers.put(player.getId(), player);
         return player;
     }

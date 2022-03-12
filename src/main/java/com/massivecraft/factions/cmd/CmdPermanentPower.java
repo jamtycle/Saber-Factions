@@ -1,7 +1,7 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
 
@@ -23,7 +23,7 @@ public class CmdPermanentPower extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        Faction targetFaction = context.argAsFaction(0);
+        IFaction targetFaction = context.argAsFaction(0);
         if (targetFaction == null) {
             return;
         }
@@ -41,7 +41,7 @@ public class CmdPermanentPower extends FCommand {
         context.msg(TL.COMMAND_PERMANENTPOWER_SUCCESS, change, targetFaction.describeTo(context.fPlayer));
 
         // Inform all other players
-        for (FPlayer fplayer : targetFaction.getFPlayersWhereOnline(true)) {
+        for (IFactionPlayer fplayer : targetFaction.getFPlayersWhereOnline(true)) {
             if (fplayer == context.fPlayer) {
                 continue;
             }

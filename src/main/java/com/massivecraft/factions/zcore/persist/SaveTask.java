@@ -1,7 +1,7 @@
 package com.massivecraft.factions.zcore.persist;
 
 import com.massivecraft.factions.Board;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.zcore.MPlugin;
 
@@ -20,7 +20,7 @@ public class SaveTask implements Runnable {
         running = true;
         p.preAutoSave();
         Factions.getInstance().forceSave(false);
-        FPlayers.getInstance().forceSave(false);
+        FactionPlayersManagerBase.getInstance().forceSave(false);
         Board.getInstance().forceSave(false);
         p.postAutoSave();
         running = false;

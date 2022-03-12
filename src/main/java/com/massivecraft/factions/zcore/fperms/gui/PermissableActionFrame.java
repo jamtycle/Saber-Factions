@@ -5,10 +5,9 @@ import com.github.stefvanschie.inventoryframework.Gui;
 import com.github.stefvanschie.inventoryframework.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.PaginatedPane;
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
-import com.massivecraft.factions.cmd.audit.FLogType;
 import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.util.Logger;
 import com.massivecraft.factions.zcore.fperms.Access;
@@ -31,7 +30,7 @@ public class PermissableActionFrame {
 
     private Gui gui;
 
-    public PermissableActionFrame(Faction f) {
+    public PermissableActionFrame(IFaction f) {
         ConfigurationSection section = FactionsPlugin.getInstance().getFileManager().getFperms().getConfig().getConfigurationSection("fperm-gui.action");
         assert section != null;
         gui = new Gui(FactionsPlugin.getInstance(),
@@ -39,7 +38,7 @@ public class PermissableActionFrame {
                 CC.translate(Objects.requireNonNull(FactionsPlugin.getInstance().getFileManager().getFperms().getConfig().getString("fperm-gui.action.name")).replace("{faction}", f.getTag())));
     }
 
-    public void buildGUI(FPlayer fplayer, Permissable perm) {
+    public void buildGUI(IFactionPlayer fplayer, Permissable perm) {
         PaginatedPane pane = new PaginatedPane(0, 0, 9, gui.getRows());
         List<GuiItem> GUIItems = new ArrayList<>();
         ItemStack dumby = buildDummyItem();
@@ -75,7 +74,6 @@ public class PermissableActionFrame {
                     }
                     // Closing and opening resets the cursor.
                     // fplayer.getPlayer().closeInventory();
-                    FactionsPlugin.instance.logFactionEvent(fplayer.getFaction(), FLogType.PERM_EDIT_DEFAULTS, fplayer.getName(), color + access.getInlinedName(access), action.name().toUpperCase(), perm.name());
 
                     buildGUI(fplayer, perm);
                 }

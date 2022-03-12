@@ -9,9 +9,6 @@ import com.massivecraft.factions.cmd.CmdAutoHelp;
 import com.massivecraft.factions.cmd.CommandContext;
 import com.massivecraft.factions.cmd.FCmdRoot;
 import com.massivecraft.factions.cmd.FCommand;
-import com.massivecraft.factions.cmd.audit.FChestListener;
-import com.massivecraft.factions.cmd.audit.FLogManager;
-import com.massivecraft.factions.cmd.audit.FLogType;
 import com.massivecraft.factions.cmd.chest.AntiChestListener;
 import com.massivecraft.factions.cmd.reserve.ReserveAdapter;
 import com.massivecraft.factions.cmd.reserve.ReserveObject;
@@ -24,8 +21,6 @@ import com.massivecraft.factions.struct.nms.NMSManager;
 import com.massivecraft.factions.struct.nms.impl.*;
 import com.massivecraft.factions.util.*;
 import com.massivecraft.factions.util.adapters.*;
-import com.massivecraft.factions.util.flight.FlightEnhance;
-import com.massivecraft.factions.util.flight.stuct.AsyncPlayerMap;
 import com.massivecraft.factions.util.timer.TimerManager;
 import com.massivecraft.factions.zcore.CommandVisibility;
 import com.massivecraft.factions.zcore.MPlugin;
@@ -59,6 +54,8 @@ import java.util.stream.Collectors;
 
 public class FactionsPlugin extends MPlugin {
 
+    // region Variables
+
     // Our single plugin instance.
     // Single 4 life.
     public static FactionsPlugin instance;
@@ -73,12 +70,10 @@ public class FactionsPlugin extends MPlugin {
     // Commands
     public FCmdRoot cmdBase;
     public CmdAutoHelp cmdAutoHelp;
-    private AsyncPlayerMap asyncPlayerMap;
     public short version;
     public boolean useNonPacketParticles = false;
     public List<String> itemList = getConfig().getStringList("fchest.Items-Not-Allowed");
     public boolean hookedPlayervaults;
-    public FLogManager fLogManager;
     public List<ReserveObject> reserveObjects;
     public FileManager fileManager;
     public TimerManager timerManager;
@@ -92,30 +87,9 @@ public class FactionsPlugin extends MPlugin {
     private Worldguard wg;
     public LunarClientAPI lunarClientAPI;
 
-    public FactionsPlugin() {
-        instance = this;
-    }
+    // endregion
 
-    public static FactionsPlugin getInstance() {
-        return instance;
-    }
-
-    public static boolean canPlayersJoin() {
-        return startupFinished;
-    }
-
-    public FileManager getFileManager() {
-        return fileManager;
-    }
-
-    public boolean getLocked() {
-        return this.locked;
-    }
-
-    public void setLocked(boolean val) {
-        this.locked = val;
-        this.setAutoSave(val);
-    }
+    // region Overrides
 
     @Override
     public void onEnable() {
@@ -140,10 +114,6 @@ public class FactionsPlugin extends MPlugin {
 
         // Load Conf from disk
         Conf.load();
-
-        if (getConfig().getBoolean("enable-faction-flight", true)) {
-            Bukkit.getServer().getScheduler().runTaskTimer(FactionsPlugin.getInstance(), new FlightEnhance(), 30L, 30L);
-        }
 
         StartupParameter.initData(this);
 
@@ -180,7 +150,6 @@ public class FactionsPlugin extends MPlugin {
                 new FactionsBlockListener(),
                 new UpgradesListener(),
                 new MissionHandler(this),
-                new FChestListener(),
                 new MenuListener(),
                 new AntiChestListener()
         };
@@ -191,8 +160,6 @@ public class FactionsPlugin extends MPlugin {
         if (Conf.useGraceSystem) {
             getServer().getPluginManager().registerEvents(timerManager.graceTimer, this);
         }
-
-        this.asyncPlayerMap = new AsyncPlayerMap(this);
 
         this.getCommand(refCommand).setExecutor(cmdBase);
 
@@ -208,102 +175,6 @@ public class FactionsPlugin extends MPlugin {
         FactionsPlugin.startupFinished = true;
     }
 
-    private void setupPlaceholderAPI() {
-        Plugin clip = getServer().getPluginManager().getPlugin("PlaceholderAPI");
-        if (clip != null && clip.isEnabled()) {
-            this.clipPlaceholderAPIManager = new ClipPlaceholderAPIManager();
-            if (this.clipPlaceholderAPIManager.register()) {
-                PlaceholderApi = true;
-                Logger.print("Successfully registered placeholders with PlaceholderAPI.", Logger.PrefixType.DEFAULT);
-            } else {
-                PlaceholderApi = false;
-            }
-        } else {
-            PlaceholderApi = false;
-        }
-
-        Plugin mvdw = getServer().getPluginManager().getPlugin("MVdWPlaceholderAPI");
-        if (mvdw != null && mvdw.isEnabled()) {
-            this.mvdwPlaceholderAPIManager = true;
-            Logger.print("Found MVdWPlaceholderAPI. Adding hooks.", Logger.PrefixType.DEFAULT);
-        }
-    }
-
-    public List<String> replacePlaceholders(List<String> lore, Placeholder... placeholders) {
-        for (Placeholder placeholder : placeholders) {
-            for (int x = 0; x <= lore.size() - 1; x++)
-                lore.set(x, lore.get(x).replace(placeholder.getTag(), placeholder.getReplace()));
-        }
-        return lore;
-    }
-
-    public HashMap<String, FactionsAddon> getFactionsAddonHashMap() {
-        return factionsAddonHashMap;
-    }
-
-    public NMSManager getNmsManager() {
-        return nmsManager;
-    }
-
-    public NMSManager setupNMS() {
-        switch (getServer().getClass().getPackage().getName().replace(".", ",").split(",")[3]) {
-//            case "v1_8_R3":
-//                return new Version_1_8_R3();
-//            case "v1_11_R1":
-//                return new Version_1_11_R1();
-//            case "v1_12_R1":
-//                return new Version_1_12_R1();
-//            case "v1_13_R1":
-//                return new Version_1_13_R1();
-//            case "v1_13_R2":
-//                return new Version_1_13_R2();
-//            case "v1_14_R1":
-//                return new Version_1_14_R1();
-//            case "v1_15_R1":
-//                return new Version_1_15_R1();
-            case "v1_16_R3":
-                return new Version_1_16_R3();
-            default:
-                getLogger().info("This version of Saber-Factions is only for the 1.16.5 Version of Minecraft.");
-                throw new IllegalArgumentException();
-        }
-    }
-
-    public boolean isClipPlaceholderAPIHooked() {
-        return this.clipPlaceholderAPIManager != null;
-    }
-
-    public boolean isMVdWPlaceholderAPIHooked() {
-        return this.mvdwPlaceholderAPIManager;
-    }
-
-    private void setupPermissions() {
-        try {
-            RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
-            if (rsp != null) perms = rsp.getProvider();
-        } catch (NoClassDefFoundError ex) {
-        }
-    }
-
-    @Override
-    public GsonBuilder getGsonBuilder() {
-        Type mapFLocToStringSetType = new TypeToken<Map<FLocation, Set<String>>>() {
-        }.getType();
-
-        Type accessTypeAdatper = new TypeToken<Map<Permissable, Map<PermissableAction, Access>>>() {
-        }.getType();
-
-        return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().enableComplexMapKeySerialization().excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.VOLATILE)
-                .registerTypeAdapter(accessTypeAdatper, new PermissionsMapTypeAdapter())
-                .registerTypeAdapter(LazyLocation.class, new MyLocationTypeAdapter())
-                .registerTypeAdapter(mapFLocToStringSetType, new MapFLocToStringSetTypeAdapter())
-                .registerTypeAdapter(Inventory.class, new InventoryTypeAdapter())
-                .registerTypeAdapter(ReserveObject.class, new ReserveAdapter())
-                .registerTypeAdapter(Location.class, new LocationTypeAdapter())
-                .registerTypeAdapterFactory(EnumTypeAdapter.ENUM_FACTORY);
-    }
-
-
     @Override
     public void onDisable() {
         if (this.AutoLeaveTask != null) {
@@ -316,32 +187,11 @@ public class FactionsPlugin extends MPlugin {
         super.onDisable();
     }
 
-    public void startAutoLeaveTask(boolean restartIfRunning) {
-        if (AutoLeaveTask != null) {
-            if (!restartIfRunning) return;
-            this.getServer().getScheduler().cancelTask(AutoLeaveTask);
-        }
-
-        if (Conf.useAutoLeaveAndDisbandSystem) {
-            if (Conf.autoLeaveRoutineRunsEveryXMinutes > 0.0) {
-                long ticks = (long) (20 * 60 * Conf.autoLeaveRoutineRunsEveryXMinutes);
-                AutoLeaveTask = getServer().getScheduler().scheduleSyncRepeatingTask(this, new AutoLeaveTask(), ticks, ticks);
-            }
-        }
-    }
-
     @Override
     public void postAutoSave() {
         //Board.getInstance().forceSave(); Not sure why this was there as it's called after the board is already saved.
         Conf.save();
     }
-
-
-    public Economy getEcon() {
-        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        return rsp.getProvider();
-    }
-
 
     @Override
     public boolean logPlayerCommands() {
@@ -352,7 +202,6 @@ public class FactionsPlugin extends MPlugin {
     public boolean handleCommand(CommandSender sender, String commandString, boolean testOnly) {
         return sender instanceof Player && FactionsPlayerListener.preventCommand(commandString, (Player) sender) || super.handleCommand(sender, commandString, testOnly);
     }
-
 
     // This method must stay for < 1.12 versions
     @Override
@@ -398,15 +247,127 @@ public class FactionsPlugin extends MPlugin {
             // The stream and foreach from the old implementation looped 2 times, by looping all players -> filtered -> looped filter and added -> filtered AGAIN at the end.
             // This loops them once and just adds, because we are filtering the arguments at the end anyways
             for (Player player : Bukkit.getServer().getOnlinePlayers()) completions.add(player.getName());
-            for (Faction faction : Factions.getInstance().getAllFactions())
+            for (IFaction faction : Factions.getInstance().getAllFactions())
                 completions.add(ChatColor.stripColor(faction.getTag()));
             completions = completions.stream().filter(m -> m.toLowerCase().startsWith(lastArg)).collect(Collectors.toList());
             return completions;
         }
     }
 
-    public AsyncPlayerMap getAsyncPlayerMap() {
-        return asyncPlayerMap;
+    @Override
+    public GsonBuilder getGsonBuilder() {
+        Type mapFLocToStringSetType = new TypeToken<Map<FLocation, Set<String>>>() {
+        }.getType();
+
+        Type accessTypeAdatper = new TypeToken<Map<Permissable, Map<PermissableAction, Access>>>() {
+        }.getType();
+
+        return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().enableComplexMapKeySerialization().excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.VOLATILE)
+                .registerTypeAdapter(LazyLocation.class, new MyLocationTypeAdapter())
+                .registerTypeAdapter(Inventory.class, new InventoryTypeAdapter())
+                .registerTypeAdapter(ReserveObject.class, new ReserveAdapter())
+                .registerTypeAdapter(Location.class, new LocationTypeAdapter())
+                .registerTypeAdapterFactory(EnumTypeAdapter.ENUM_FACTORY);
+    }
+
+    // endregion
+
+    // region Functions
+
+    public FactionsPlugin() {
+        instance = this;
+    }
+
+    public static boolean canPlayersJoin() {
+        return startupFinished;
+    }
+
+    public void setLocked(boolean val) {
+        this.locked = val;
+        this.setAutoSave(val);
+    }
+
+    private void setupPlaceholderAPI() {
+        Plugin clip = getServer().getPluginManager().getPlugin("PlaceholderAPI");
+        if (clip != null && clip.isEnabled()) {
+            this.clipPlaceholderAPIManager = new ClipPlaceholderAPIManager();
+            if (this.clipPlaceholderAPIManager.register()) {
+                PlaceholderApi = true;
+                Logger.print("Successfully registered placeholders with PlaceholderAPI.", Logger.PrefixType.DEFAULT);
+            } else {
+                PlaceholderApi = false;
+            }
+        } else {
+            PlaceholderApi = false;
+        }
+
+        Plugin mvdw = getServer().getPluginManager().getPlugin("MVdWPlaceholderAPI");
+        if (mvdw != null && mvdw.isEnabled()) {
+            this.mvdwPlaceholderAPIManager = true;
+            Logger.print("Found MVdWPlaceholderAPI. Adding hooks.", Logger.PrefixType.DEFAULT);
+        }
+    }
+
+    public List<String> replacePlaceholders(List<String> lore, Placeholder... placeholders) {
+        for (Placeholder placeholder : placeholders) {
+            for (int x = 0; x <= lore.size() - 1; x++)
+                lore.set(x, lore.get(x).replace(placeholder.getTag(), placeholder.getReplace()));
+        }
+        return lore;
+    }
+
+    public NMSManager setupNMS() {
+        switch (getServer().getClass().getPackage().getName().replace(".", ",").split(",")[3]) {
+//            case "v1_8_R3":
+//                return new Version_1_8_R3();
+//            case "v1_11_R1":
+//                return new Version_1_11_R1();
+//            case "v1_12_R1":
+//                return new Version_1_12_R1();
+//            case "v1_13_R1":
+//                return new Version_1_13_R1();
+//            case "v1_13_R2":
+//                return new Version_1_13_R2();
+//            case "v1_14_R1":
+//                return new Version_1_14_R1();
+//            case "v1_15_R1":
+//                return new Version_1_15_R1();
+            case "v1_16_R3":
+                return new Version_1_16_R3();
+            default:
+                getLogger().info("This version of Saber-Factions is only for the 1.16.5 Version of Minecraft.");
+                throw new IllegalArgumentException();
+        }
+    }
+
+    public boolean isClipPlaceholderAPIHooked() {
+        return this.clipPlaceholderAPIManager != null;
+    }
+
+    public boolean isMVdWPlaceholderAPIHooked() {
+        return this.mvdwPlaceholderAPIManager;
+    }
+
+    private void setupPermissions() {
+        try {
+            RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
+            if (rsp != null) perms = rsp.getProvider();
+        } catch (NoClassDefFoundError ex) {
+        }
+    }
+
+    public void startAutoLeaveTask(boolean restartIfRunning) {
+        if (AutoLeaveTask != null) {
+            if (!restartIfRunning) return;
+            this.getServer().getScheduler().cancelTask(AutoLeaveTask);
+        }
+
+        if (Conf.useAutoLeaveAndDisbandSystem) {
+            if (Conf.autoLeaveRoutineRunsEveryXMinutes > 0.0) {
+                long ticks = (long) (20 * 60 * Conf.autoLeaveRoutineRunsEveryXMinutes);
+                AutoLeaveTask = getServer().getScheduler().scheduleSyncRepeatingTask(this, new AutoLeaveTask(), ticks, ticks);
+            }
+        }
     }
 
     // -------------------------------------------- //
@@ -418,12 +379,33 @@ public class FactionsPlugin extends MPlugin {
         Conf.chatTagHandledByAnotherPlugin = notByFactions;
     }
 
-    public FLogManager getFlogManager() {
-        return fLogManager;
+    // endregion
+
+    // region Variables
+
+    public static FactionsPlugin getInstance() {
+        return instance;
     }
 
-    public void logFactionEvent(Faction faction, FLogType type, String... arguments) {
-        this.fLogManager.log(faction, type, arguments);
+    public FileManager getFileManager() {
+        return fileManager;
+    }
+
+    public boolean getLocked() {
+        return this.locked;
+    }
+
+    public HashMap<String, FactionsAddon> getFactionsAddonHashMap() {
+        return factionsAddonHashMap;
+    }
+
+    public NMSManager getNmsManager() {
+        return nmsManager;
+    }
+
+    public Economy getEcon() {
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        return rsp.getProvider();
     }
 
     public LunarClientAPI getLunarClientAPI() {
@@ -434,7 +416,6 @@ public class FactionsPlugin extends MPlugin {
         return this.reserveObjects;
     }
 
-
     public String getPrimaryGroup(OfflinePlayer player) {
         return perms == null || !perms.hasGroupSupport() ? " " : perms.getPrimaryGroup(Bukkit.getWorlds().get(0).toString(), player);
     }
@@ -443,10 +424,10 @@ public class FactionsPlugin extends MPlugin {
         return timerManager;
     }
 
-
     public FactionsPlayerListener getFactionsPlayerListener() {
         return this.factionsPlayerListener;
     }
 
+    // endregion
 
 }

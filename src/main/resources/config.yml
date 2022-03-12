@@ -45,20 +45,6 @@ portals:
 
 ### Hard Core Settings ###
 
-# Warps
-# What should be the max amount of warps that a Faction can set?
-max-warps: 5
-
-# This is the cost section for warps.
-# It will charge them each time the command would be successful. (won't charge on erroneous /f warp attempts).
-# You can use decimal places here.
-# If enabled is set to false, it will ignore the values.
-warp-cost:
-  enabled: false
-  setwarp: 5
-  delwarp: 5
-  warp: 5
-
 # Faction Fly
 # Enable Faction Fly:
 enable-faction-flight: true
@@ -194,21 +180,6 @@ scoreboard:
     - " &8» &cOnline Players&7: &f{total-online}"
     - "&7&m---------------------------"
 
-
-
-# Configration section for warmups.
-# Warmup times are in seconds - if a value of 0 is set, there is no warmup.
-warmups:
-  # Delay for /f home
-  f-home: 15
-  # Delay for /f warp
-  f-warp: 10
-  # Delay for /f fly
-  f-fly: 0
-  #Delay for /f checkpoint's teleport
-  f-checkpoint: 10
-  #Delay for /f tpbanner
-  f-banner: 10
 
 ######################################################
 #################### HCF Features ####################
@@ -419,40 +390,6 @@ help:
     - '&c/f wild &8- &7Teleport to a random location is a specific radius.'
     - '&7&m--------------------&r &e/f help &7&m-----------------------'
 
-############################################################
-# +------------------------------------------------------+ #
-# |                  Faction Warp GUI                    | #
-# +------------------------------------------------------+ #
-############################################################
-
-fwarp-gui:
-  name: "Faction Warps"
-  rows: 3
-  password-timeout: 5
-  warp-slots:
-    - 11
-    - 12
-    - 13
-    - 14
-    - 15
-  warp-item:
-    Type: EYE_OF_ENDER
-    Name: '&c&lFaction Warp {warp}'
-    # {warp-protected} Warp protection by password, Enabled & Disabled
-    # {warp-cost} Warp cost
-    Lore:
-      - ''
-      - '&4&l* &cPassword: &f{warp-protected}'
-      - '&4&l* &cCost: &f{warp-cost}'
-      - ''
-      - '&7&o(( Tip: You need &c&opay&7&o to &f&oteleport to'
-      - '&7&oa &a&ofaction warp&7&o. Unless it''s &c&oDisabled&7&o. ))'
-  # Dummy Items
-  dummy-item:
-    Type: BLACK_STAINED_GLASS_PANE
-    Name: ' '
-    Lore:
-      - ' '
 ############################################################
 # +------------------------------------------------------+ #
 # |                  Faction Broadcasts                  | #

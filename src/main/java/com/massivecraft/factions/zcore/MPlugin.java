@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.massivecraft.factions.Board;
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.util.Logger;
 import com.massivecraft.factions.zcore.persist.SaveTask;
@@ -183,7 +183,7 @@ public abstract class MPlugin extends JavaPlugin {
         // only save data if plugin actually loaded successfully
         if (loadSuccessful) {
             Factions.getInstance().forceSave();
-            FPlayers.getInstance().forceSave();
+            FactionPlayersManagerBase.getInstance().forceSave();
             Board.getInstance().forceSave();
         }
 

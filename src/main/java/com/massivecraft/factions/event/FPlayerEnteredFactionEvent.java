@@ -1,8 +1,9 @@
 package com.massivecraft.factions.event;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 public class FPlayerEnteredFactionEvent extends FactionPlayerEvent {
 
@@ -11,11 +12,11 @@ public class FPlayerEnteredFactionEvent extends FactionPlayerEvent {
      */
 
     private static final HandlerList handlers = new HandlerList();
-    private FPlayer fPlayer;
-    private Faction factionTo;
-    private Faction factionFrom;
+    private IFactionPlayer fPlayer;
+    private IFaction factionTo;
+    private IFaction factionFrom;
 
-    public FPlayerEnteredFactionEvent(Faction factionTo, Faction factionFrom, FPlayer fPlayer) {
+    public FPlayerEnteredFactionEvent(IFaction factionTo, IFaction factionFrom, IFactionPlayer fPlayer) {
         super(fPlayer.getFaction(), fPlayer);
         this.factionFrom = factionFrom;
         this.factionTo = factionTo;
@@ -26,20 +27,21 @@ public class FPlayerEnteredFactionEvent extends FactionPlayerEvent {
         return handlers;
     }
 
+    @NotNull
     public HandlerList getHandlers() {
         return handlers;
     }
 
     @Override
-    public FPlayer getfPlayer() {
+    public IFactionPlayer getfPlayer() {
         return fPlayer;
     }
 
-    public Faction getFactionTo() {
+    public IFaction getFactionTo() {
         return factionTo;
     }
 
-    public Faction getFactionFrom() {
+    public IFaction getFactionFrom() {
         return factionFrom;
     }
 

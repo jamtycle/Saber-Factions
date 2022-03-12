@@ -1,8 +1,10 @@
 package com.massivecraft.factions.event;
 
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
+import com.massivecraft.factions.mysql.Faction;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
@@ -16,12 +18,12 @@ public class LandClaimEvent extends FactionPlayerEvent implements Cancellable {
      */
 
     private boolean cancelled;
-    private FLocation location;
+    private final FLocation location;
 
-    public LandClaimEvent(FLocation loc, Faction f, FPlayer p) {
-        super(f, p);
+    public LandClaimEvent(FLocation _location, Faction _faction, FactionPlayer _player) {
+        super(_faction, _player);
         cancelled = false;
-        location = loc;
+        location = _location;
     }
 
     /**
@@ -40,8 +42,8 @@ public class LandClaimEvent extends FactionPlayerEvent implements Cancellable {
      * @deprecated use getFaction().getId() instead.
      */
     @Deprecated
-    public String getFactionId() {
-        return getFaction().getId();
+    public int getFactionId() {
+        return getFaction().getId_faction();
     }
 
     /**
@@ -52,7 +54,7 @@ public class LandClaimEvent extends FactionPlayerEvent implements Cancellable {
      */
     @Deprecated
     public String getFactionTag() {
-        return getFaction().getTag();
+        return getFaction().getFaction_tag();
     }
 
     /**

@@ -1,6 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
 
@@ -22,7 +22,7 @@ public class CmdStrikesInfo extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        Faction target = context.argAsFaction(0);
+        IFaction target = context.argAsFaction(0);
         if (target == null) target = context.faction;
         if (target.isSystemFaction()) {
             context.msg(TL.COMMAND_STRIKES_TARGET_INVALID, context.argAsString(0));

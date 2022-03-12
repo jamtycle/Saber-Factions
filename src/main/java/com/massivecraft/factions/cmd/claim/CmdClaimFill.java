@@ -7,7 +7,7 @@ package com.massivecraft.factions.cmd.claim;
 import com.massivecraft.factions.Board;
 import com.massivecraft.factions.Conf;
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.cmd.Aliases;
 import com.massivecraft.factions.cmd.CommandContext;
 import com.massivecraft.factions.cmd.CommandRequirements;
@@ -49,11 +49,11 @@ public class CmdClaimFill extends FCommand {
             return;
         }
 
-        final Faction forFaction = context.argAsFaction(2, context.faction);
+        final IFaction forFaction = context.argAsFaction(2, context.faction);
         Location location = context.player.getLocation();
         FLocation loc = new FLocation(location);
 
-        Faction currentFaction = Board.getInstance().getFactionAt(loc);
+        IFaction currentFaction = Board.getInstance().getFactionAt(loc);
 
         if (currentFaction.equals(forFaction)) {
             context.msg(TL.CLAIM_ALREADYOWN, forFaction.describeTo(context.fPlayer, true));

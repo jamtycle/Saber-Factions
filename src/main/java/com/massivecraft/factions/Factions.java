@@ -19,32 +19,34 @@ public abstract class Factions {
         return null;
     }
 
-    public abstract Faction getFactionById(String id);
+    public abstract IFaction getFactionById(String id);
 
-    public abstract Faction getByTag(String str);
+    public abstract IFaction getFactionById(int id);
 
-    public abstract Faction getBestTagMatch(String start);
+    public abstract IFaction getByTag(String str);
+
+    public abstract IFaction getBestTagMatch(String start);
 
     public abstract boolean isTagTaken(String str);
 
     public abstract boolean isValidFactionId(String id);
 
-    public abstract Faction createFaction();
+    public abstract IFaction createFaction();
 
-    public abstract void removeFaction(String id);
+    public abstract void removeFaction(int id);
 
     public abstract Set<String> getFactionTags();
 
-    public abstract ArrayList<Faction> getAllFactions();
+    public abstract ArrayList<IFaction> getAllFactions();
 
     @Deprecated
-    public abstract Faction getNone();
+    public abstract IFaction getNone();
 
-    public abstract Faction getWilderness();
+    public abstract IFaction getWilderness();
 
-    public abstract Faction getSafeZone();
+    public abstract IFaction getSafeZone();
 
-    public abstract Faction getWarZone();
+    public abstract IFaction getWarZone();
 
     public abstract void forceSave();
 

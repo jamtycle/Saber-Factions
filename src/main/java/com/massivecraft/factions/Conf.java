@@ -2,7 +2,6 @@ package com.massivecraft.factions;
 
 import com.cryptomorin.xseries.XMaterial;
 import com.google.common.collect.ImmutableMap;
-import com.massivecraft.factions.integration.dynmap.DynmapStyle;
 import com.massivecraft.factions.zcore.fperms.DefaultPermissions;
 import com.massivecraft.factions.zcore.fperms.PermissableAction;
 import org.bukkit.ChatColor;
@@ -358,21 +357,6 @@ public class Conf {
     // Specify Faction either by name or UUID.
     // To hide all regions on a given world, add 'world:<worldname>' to the list.
     public static Set<String> dynmapHiddenFactions = new HashSet<>();
-    public static DynmapStyle dynmapDefaultStyle = new DynmapStyle()
-            .setStrokeColor(DYNMAP_STYLE_LINE_COLOR)
-            .setLineOpacity(DYNMAP_STYLE_LINE_OPACITY)
-            .setLineWeight(DYNMAP_STYLE_LINE_WEIGHT)
-            .setFillColor(DYNMAP_STYLE_FILL_COLOR)
-            .setFillOpacity(DYNMAP_STYLE_FILL_OPACITY)
-            .setHomeMarker(DYNMAP_STYLE_HOME_MARKER)
-            .setBoost(DYNMAP_STYLE_BOOST);
-
-    // Optional per Faction style overrides. Any defined replace those in dynmapDefaultStyle.
-    // Specify Faction either by name or UUID.
-    public static Map<String, DynmapStyle> dynmapFactionStyles = ImmutableMap.of(
-            "SafeZone", new DynmapStyle().setStrokeColor("#FF00FF").setFillColor("#FF00FF").setBoost(false),
-            "WarZone", new DynmapStyle().setStrokeColor("#FF0000").setFillColor("#FF0000").setBoost(false)
-    );
 
 
     //Faction banks, to pay for land claiming and other costs instead of individuals paying for them
@@ -396,7 +380,7 @@ public class Conf {
     public static int defaultMaxVaults = 0;
     public static boolean disableFlightOnFactionClaimChange = true;
 
-    public static Backend backEnd = Backend.JSON;
+    public static Backend backEnd = Backend.MYSQL;
 
     // Taller and wider for "bigger f map"
     public static int mapHeight = 17;
@@ -422,7 +406,11 @@ public class Conf {
     public static HashMap<String, DefaultPermissions> defaultFactionPermissions = new HashMap<>();
     public static HashSet<PermissableAction> lockedPermissions = new HashSet<>();
 
-    private static transient Conf i = new Conf();
+    private static final transient Conf i = new Conf();
+
+    public Conf() {
+
+    }
 
     static {
         lockedPermissions.add(PermissableAction.CHEST);
@@ -621,8 +609,7 @@ public class Conf {
 
     public enum Backend {
         JSON,
-        //MYSQL,  TODO add MySQL storage
-        ;
+        MYSQL
     }
 }
 

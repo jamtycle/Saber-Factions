@@ -1,27 +1,18 @@
 package com.massivecraft.factions.zcore.frame.fupgrades;
 
-import com.bgsoftware.wildstacker.api.WildStackerAPI;
 import com.cryptomorin.xseries.XMaterial;
 import com.massivecraft.factions.*;
-import dev.rosewood.rosestacker.api.RoseStackerAPI;
-import org.bukkit.Bukkit;
 import org.bukkit.CropState;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockGrowEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.SpawnerSpawnEvent;
-import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.material.Crops;
 
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class UpgradesListener implements Listener {
@@ -32,52 +23,22 @@ public class UpgradesListener implements Listener {
 
     @EventHandler
     public void onDeath(EntityDeathEvent e) {
-        Entity killer = e.getEntity().getKiller();
-        if (killer == null || !(killer instanceof Player)) return;
+        Player killer = e.getEntity().getKiller();
+        if (killer == null) return;
 
-        FLocation floc = new FLocation(e.getEntity().getLocation());
-        Faction faction = Board.getInstance().getFactionAt(floc);
-        if (!faction.isWilderness()) {
-            int level = faction.getUpgrade(UpgradeType.EXP);
-            double multiplier = FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getDouble("fupgrades.MainMenu.EXP.EXP-Boost.level-" + level);
-            if (level != 0 && multiplier > 0.0) {
-                this.spawnMoreExp(e, multiplier);
-            }
-        }
-    }
+        // TODO: Announce death.
 
-    private void spawnMoreExp(EntityDeathEvent e, double multiplier) {
-        double newExp = e.getDroppedExp() * multiplier;
-        e.setDroppedExp((int) newExp);
-    }
-
-    @EventHandler
-    public void onSpawn(SpawnerSpawnEvent e) {
-        FLocation floc = new FLocation(e.getLocation());
-        Faction factionAtLoc = Board.getInstance().getFactionAt(floc);
-        if (!factionAtLoc.isWilderness()) {
-            int level = factionAtLoc.getUpgrade(UpgradeType.SPAWNER);
-            if (level == 0) return;
-            this.lowerSpawnerDelay(e, FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getDouble("fupgrades.MainMenu.Spawners.Spawner-Boost.level-" + level));
-        }
-    }
-
-    private void lowerSpawnerDelay(SpawnerSpawnEvent e, double multiplier) {
-        int lowerby = (int) Math.round(e.getSpawner().getDelay() * multiplier);
-
-        if (Bukkit.getPluginManager().isPluginEnabled("WildStacker")) {
-            WildStackerAPI.getStackedSpawner(e.getSpawner()).getSpawner().setDelay(e.getSpawner().getDelay() - lowerby);
-        } else if (Bukkit.getPluginManager().isPluginEnabled("RoseStacker")) {
-            RoseStackerAPI.getInstance().getStackedSpawner(e.getSpawner().getBlock()).getSpawner().setDelay(e.getSpawner().getDelay() - lowerby);
-        } else {
-            e.getSpawner().setDelay(e.getSpawner().getDelay() - lowerby);
-        }
+//        FLocation floc = new FLocation(e.getEntity().getLocation());
+//        Faction faction = Board.getInstance().getFactionAt(floc);
+//        if (!faction.isWilderness()) {
+//
+//        }
     }
 
     @EventHandler
     public void onCropGrow(BlockGrowEvent e) {
         FLocation floc = new FLocation(e.getBlock().getLocation());
-        Faction factionAtLoc = Board.getInstance().getFactionAt(floc);
+        IFaction factionAtLoc = Board.getInstance().getFactionAt(floc);
         if (!factionAtLoc.isWilderness()) {
             int level = factionAtLoc.getUpgrade(UpgradeType.CROP);
             int chance = FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Crops.Crop-Boost.level-" + level);
@@ -107,49 +68,6 @@ public class UpgradesListener implements Listener {
             if (above.getType() == Material.AIR && above.getLocation().add(0.0, -2.0, 0.0).getBlock().getType() != Material.AIR) {
                 above.setType(Material.CACTUS);
             }
-        }
-    }
-
-    @EventHandler
-    public void onWaterRedstone(BlockFromToEvent e) {
-        List<String> unbreakable = FactionsPlugin.getInstance().getConfig().getStringList("no-water-destroy.Item-List");
-        String block = e.getToBlock().getType().toString();
-        FLocation floc = new FLocation(e.getToBlock().getLocation());
-        Faction factionAtLoc = Board.getInstance().getFactionAt(floc);
-
-        if (!factionAtLoc.isWilderness()) {
-            int level = factionAtLoc.getUpgrade(UpgradeType.REDSTONE);
-            if (level != 0) {
-                if (level == 1)
-                    if (unbreakable.contains(block)) e.setCancelled(true);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerFallUpgrade(EntityDamageEvent e) {
-        if (e.getEntity() instanceof Player) {
-            if (e.getCause() == EntityDamageEvent.DamageCause.FALL) {
-                Player player = (Player) e.getEntity();
-                FPlayer fPlayer = FPlayers.getInstance().getByPlayer(player);
-                int level = fPlayer.getFaction().getUpgrade(UpgradeType.FALL_DAMAGE);
-
-                if (level > 0) {
-                    e.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onArmorDamage(PlayerItemDamageEvent e) {
-        if (FPlayers.getInstance().getByPlayer(e.getPlayer()) == null) return;
-
-        if (e.getItem().getType().toString().contains("LEGGINGS") || e.getItem().getType().toString().contains("CHESTPLATE") || e.getItem().getType().toString().contains("HELMET") || e.getItem().getType().toString().contains("BOOTS")) {
-            int lvl = FPlayers.getInstance().getByPlayer(e.getPlayer()).getFaction().getUpgrade(UpgradeType.REINFORCEDARMOR);
-            double drop = FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getDouble("fupgrades.MainMenu.Armor.Armor-HP-Drop.level-" + lvl);
-            int newDamage = (int) Math.round(e.getDamage() - e.getDamage() * drop);
-            e.setDamage(newDamage);
         }
     }
 }

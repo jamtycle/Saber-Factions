@@ -2,7 +2,7 @@ package com.massivecraft.factions.cmd;
 
 import com.massivecraft.factions.Board;
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
 
@@ -28,7 +28,7 @@ public class CmdLookup extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        Faction faction = context.argAsFaction(0);
+        IFaction faction = context.argAsFaction(0);
         if (faction == null) {
             context.msg(TL.COMMAND_LOOKUP_INVALID);
             return;

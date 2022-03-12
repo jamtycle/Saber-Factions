@@ -1,6 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
@@ -24,7 +24,7 @@ public class CmdSetPower extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        FPlayer targetPlayer = context.argAsFPlayer(0);
+        IFactionPlayer targetPlayer = context.argAsFPlayer(0);
         int value = context.argAsInt(1, -1);
         if (value < 0) {
             context.sender.sendMessage(ChatColor.RED + "Number must be greater than 0.");

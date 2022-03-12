@@ -5,7 +5,7 @@ import club.minnced.discord.webhook.WebhookClientBuilder;
 import club.minnced.discord.webhook.send.WebhookMessage;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.FactionsPlugin;
 import mkremins.fanciful.FancyMessage;
@@ -36,7 +36,7 @@ public class FactionChatHandler extends ListenerAdapter {
         this.plugin = plugin;
     }
 
-    public static void sendMessage(FactionsPlugin plugin, Faction faction, UUID uuid, String username, String message) {
+    public static void sendMessage(FactionsPlugin plugin, IFaction faction, UUID uuid, String username, String message) {
         String factionsChatChannelId = faction.getFactionChatChannelId();
         String messageWithMentions = null;
         if (factionsChatChannelId == null || factionsChatChannelId.isEmpty()) return;
@@ -119,7 +119,7 @@ public class FactionChatHandler extends ListenerAdapter {
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
-        Faction faction = Factions.getInstance().getAllFactions().stream().filter(f -> event.getChannel().getId().equals(f.getFactionChatChannelId())).findAny().orElse(null);
+        IFaction faction = Factions.getInstance().getAllFactions().stream().filter(f -> event.getChannel().getId().equals(f.getFactionChatChannelId())).findAny().orElse(null);
         if (faction == null) return;
 
         String content = event.getMessage().getContentDisplay();

@@ -1,5 +1,6 @@
 package com.massivecraft.factions;
 
+import com.massivecraft.factions.mysql.FactionPlayer;
 import com.massivecraft.factions.util.MiscUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -51,7 +52,11 @@ public class FLocation implements Serializable {
         this(player.getLocation());
     }
 
-    public FLocation(FPlayer fplayer) {
+    public FLocation(IFactionPlayer fplayer) {
+        this(fplayer.getPlayer());
+    }
+
+    public FLocation(FactionPlayer fplayer) {
         this(fplayer.getPlayer());
     }
 

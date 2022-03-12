@@ -1,7 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
@@ -48,7 +47,7 @@ public class CmdShow extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        Faction faction = context.faction;
+        IFaction faction = context.faction;
         FactionsPlugin instance = FactionsPlugin.getInstance();
         if (context.argIsSet(0))
             faction = context.argAsFaction(0);
@@ -59,11 +58,6 @@ public class CmdShow extends FCommand {
         if (context.fPlayer != null && !context.player.getPlayer().hasPermission("factions.show.bypassexempt")
                 && instance.getConfig().getStringList("show-exempt").contains(faction.getTag())) {
             context.msg(TL.COMMAND_SHOW_EXEMPT);
-            return;
-        }
-
-        // if economy is enabled, they're not on the bypass list, and this command has a cost set, make 'em pay
-        if (!context.payForCommand(Conf.econCostShow, TL.COMMAND_SHOW_TOSHOW, TL.COMMAND_SHOW_FORSHOW)) {
             return;
         }
 
@@ -85,7 +79,7 @@ public class CmdShow extends FCommand {
 
         List<FancyMessage> fancy = new ArrayList<>();
         List<String> finalShow = show;
-        Faction finalFaction = faction;
+        IFaction finalFaction = faction;
         instance.getServer().getScheduler().runTaskAsynchronously(instance, () -> {
             for (String raw : finalShow) {
                 String parsed = instance.getConfig().getBoolean("relational-show", true) ? TagUtil.parsePlain(finalFaction, context.fPlayer, raw) : TagUtil.parsePlain(finalFaction, raw); // use relations

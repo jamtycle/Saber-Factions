@@ -1,12 +1,11 @@
 package com.massivecraft.factions.cmd.relational;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.cmd.CommandContext;
 import com.massivecraft.factions.cmd.CommandRequirements;
 import com.massivecraft.factions.cmd.FCommand;
-import com.massivecraft.factions.cmd.audit.FLogType;
 import com.massivecraft.factions.event.FactionRelationEvent;
 import com.massivecraft.factions.event.FactionRelationWishEvent;
 import com.massivecraft.factions.scoreboards.FTeamWrapper;
@@ -38,7 +37,7 @@ public abstract class FRelationCommand extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        Faction them = context.argAsFaction(0);
+        IFaction them = context.argAsFaction(0);
         if (them == null) return;
 
         if (!context.faction.isNormal()) return;
@@ -69,11 +68,6 @@ public abstract class FRelationCommand extends FCommand {
             return;
         }
 
-        // if economy is enabled, they're not on the bypass list, and this command has a cost set, make 'em pay
-        if (!context.payForCommand(targetRelation.getRelationCost(), TL.COMMAND_RELATIONS_TOMARRY, TL.COMMAND_RELATIONS_FORMARRY)) {
-            return;
-        }
-
         // try to set the new relation
         context.faction.setRelationWish(them, targetRelation);
         Relation currentRelation = context.faction.getRelationTo(them, true);
@@ -84,8 +78,6 @@ public abstract class FRelationCommand extends FCommand {
             // trigger the faction relation event
             FactionRelationEvent relationEvent = new FactionRelationEvent(context.faction, them, oldRelation, currentRelation);
             Bukkit.getServer().getPluginManager().callEvent(relationEvent);
-            FactionsPlugin.instance.logFactionEvent(context.faction, FLogType.RELATION_CHANGE, context.fPlayer.getName(), this.targetRelation.getColor() + this.targetRelation.name(), oldRelation.getColor() + them.getTag());
-            FactionsPlugin.instance.logFactionEvent(them, FLogType.RELATION_CHANGE, oldRelation.getColor() + context.fPlayer.getName(), this.targetRelation.getColor() + this.targetRelation.name(), "your faction");
 
             them.msg(TL.COMMAND_RELATIONS_MUTUAL, currentRelationColor + targetRelation.getTranslation(), currentRelationColor + context.faction.getTag());
             context.faction.msg(TL.COMMAND_RELATIONS_MUTUAL, currentRelationColor + targetRelation.getTranslation(), currentRelationColor + them.getTag());
@@ -110,7 +102,7 @@ public abstract class FRelationCommand extends FCommand {
         FTeamWrapper.updatePrefixes(them);
     }
 
-    private boolean hasMaxRelations(Faction us, Faction them, Relation targetRelation) {
+    private boolean hasMaxRelations(IFaction us, IFaction them, Relation targetRelation) {
         int max = FactionsPlugin.getInstance().getConfig().getInt("max-relations." + targetRelation.toString(), -1);
         if (FactionsPlugin.getInstance().getConfig().getBoolean("max-relations.enabled", false)) {
             if (max == 0) {

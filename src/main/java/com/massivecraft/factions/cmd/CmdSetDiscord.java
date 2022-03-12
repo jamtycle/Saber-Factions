@@ -1,6 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Role;
@@ -46,7 +46,7 @@ public class CmdSetDiscord extends FCommand {
             }
         } else if (context.args.size() == 2) {
             if (context.fPlayer.isAdminBypassing()) {
-                Faction faction = context.argAsFaction(1);
+                IFaction faction = context.argAsFaction(1);
                 if (faction != null) {
                     if (isDiscordInvite(context.argAsString(0))) {
                         context.fPlayer.getFaction().setDiscord(context.argAsString(0));

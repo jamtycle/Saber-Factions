@@ -354,13 +354,6 @@ COMMAND:
     DESCRIPTION: elimina el hogar de su facción
   CHECK:
     DESCRIPTION: ¡Gestiona tu sistema de control de facciones!
-  WEEWOO:
-    STARTED: '&c&lFacción WeeWoo(Alarma)&7 » &aWeewoo(Alarma) iniciada por %1$s'
-    STOPPED: '&c&lFacción WeeWoo(Alarma)&7 » &aWeewoo(Alarma) detenido por %1$s'
-    ALREADY:
-      STARTED: '&cWeewoo(Alarma) ya comenzó'
-      STOPPED: '&cWeewoo(Alarma) ya se ha detenido'
-    DESCRIPTION: notifica a todos los miembros de la facción que estás siendo asaltado
   DISCORD:
     DESCRIPTION: Enlaza tu cuenta de Discord
     NOTSET: '&c&l[!] &7¡Tu facción no tiene establecido un servidor de discord!'
@@ -687,23 +680,6 @@ COMMAND:
       DISCORD: '&c&l[!] &b%1$s''s &7faction tiene su enlace de discord establecido en &b%2$s&7.'
     DESCRIPTION: '&c&l[!] &7Ver un enlace de discord de una facción específica con &b/f discord
       <facción>&b.'
-  PAYPAL:
-    NOTSET: '&c&l[!] &7¡Tu facción no tiene su paypal configurado!'
-  PAYPALSET:
-    ADMIN:
-      SUCCESSFUL: '&c&l[!] &7Ha establecido el &7paypal de &b%1$s a &b%2$s&7.'
-      FAILED: '&c&l[!] &b%1$s &7no es un correo electrónico!'
-    NOTEMAIL: '&c&l[!] &b%1$s &7no es un email!'
-    DESCRIPTION: '&c&l[!] &7Establece el correo electrónico de tu facción para reclamar recompensas'
-    CREATED: '&c&l[!] &7Asegúrese de escribir &b/f <paypal/setpaypal> <email>&7!'
-    SUCCESSFUL: '&c&l[!] &7Configuración con éxito su correo electrónico de la Facción - &b%1$s&7.'
-  PAYPALSEE:
-    DESCRIPTION: '&c&l[!] &7Ver el correo electrónico de paypal de una facción específica con &b/f <seepaypal/getpaypal>
-      <facción>&b.'
-    FACTION:
-      PAYPAL: '&c&l[!] &b%1$s''s &7faction tiene su paypal configurado a &b%2$s&7.'
-      NOTSET: '&c&l[!] &b%1$s''s &7paypal aún no se ha establecido!'
-      NOFACTION: '&c&l[!] &b%1$s &7no tiene facción!'
   PEACEFUL:
     DESCRIPTION: '&c&l[!]&7Configurar una facción como pacífica'
     YOURS: '&c&l[!]&7%1$s tiene %2$s su facción'
@@ -1218,20 +1194,7 @@ CHECK:
     LINE: '&f%1$s. &d%2$s: &f%3$s (%4$s Buffer, %5$s Paredes)'
     'NO':
       DATA: '&8Sin datos'
-WEE:
-  WOO:
-    MESSAGE: '&c&lFacción WeeWoo(Alarma)&7 » ¡Nos están asaltando!'
-WEEWOO:
-  ALREADY:
-    STARTED:
-      DISCORD: Weewoo(Alarma) ya ha empezado
-      INGAME: '&cWeewoo(Alarma) ya comenzó'
-    STOPPED:
-      DISCORD: Weewoo(Alarma) ya se ha detenido
-  STARTED:
-    DISCORD: Weewoo(Alarma) iniciado por %1$s
-  STOPPED:
-    DISCORD: Weewoo(Alarma) detenido por %1$s
+
 INVITE:
   BOT:
     USAGE: Obtén la invitación para el bot de Discord
@@ -1307,9 +1270,6 @@ XPBOTTLE:
   WITHDRAW:
     'NO':
       ARGS: '&c&l[!] &7Prueba /bottle <cantidad>'
-PAYPALSEE:
-  PLAYER:
-    PAYPAL: '&c&l[!] &7Paypal de la facción: &b%1$s&7.'
 SHOP:
   NOT:
     ENOUGH:

@@ -1,8 +1,9 @@
 package com.massivecraft.factions.util;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.zcore.util.TL;
 import org.bukkit.ChatColor;
@@ -117,20 +118,21 @@ public class MiscUtil {
         return errors;
     }
 
-    public static Iterable<FPlayer> rankOrder(Iterable<FPlayer> players) {
-        List<FPlayer> admins = new ArrayList<>();
-        List<FPlayer> coleaders = new ArrayList<>();
-        List<FPlayer> moderators = new ArrayList<>();
-        List<FPlayer> normal = new ArrayList<>();
-        List<FPlayer> recruit = new ArrayList<>();
+    public static Iterable<FactionPlayer> rankOrder(FactionPlayer[] players) {
+        // TODO: Roles needs a redo, this must change.
+        List<FactionPlayer> admins = new ArrayList<>();
+        List<FactionPlayer> coleaders = new ArrayList<>();
+        List<FactionPlayer> moderators = new ArrayList<>();
+        List<FactionPlayer> normal = new ArrayList<>();
+        List<FactionPlayer> recruit = new ArrayList<>();
 
-        for (FPlayer player : players) {
+        for (FactionPlayer player : players) {
 
             // Fix for some data being broken when we added the recruit rank.
-            if (player.getRole() == null) {
-                player.setRole(Role.NORMAL);
-                Logger.print( String.format("Player %s had null role. Setting them to normal. This isn't good D:", player.getName()), Logger.PrefixType.WARNING);
-            }
+//            if (player.getRole() == null) {
+//                player.setRole(Role.NORMAL);
+//                Logger.print( String.format("Player %s had null role. Setting them to normal. This isn't good D:", player.getName()), Logger.PrefixType.WARNING);
+//            }
 
             switch (player.getRole()) {
                 case LEADER:
@@ -151,7 +153,7 @@ public class MiscUtil {
             }
         }
 
-        List<FPlayer> ret = new ArrayList<>();
+        List<FactionPlayer> ret = new ArrayList<>();
         ret.addAll(admins);
         ret.addAll(coleaders);
         ret.addAll(moderators);

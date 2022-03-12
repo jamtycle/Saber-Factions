@@ -50,7 +50,7 @@ public class CmdOwner extends FCommand {
 
         FLocation flocation = new FLocation(context.fPlayer);
 
-        Faction factionHere = Board.getInstance().getFactionAt(flocation);
+        IFaction factionHere = Board.getInstance().getFactionAt(flocation);
         if (factionHere != context.faction) {
             if (!factionHere.isNormal()) {
                 context.msg(TL.COMMAND_OWNER_NOTCLAIMED);
@@ -63,7 +63,7 @@ public class CmdOwner extends FCommand {
             }
         }
 
-        FPlayer target = context.argAsBestFPlayerMatch(0, context.fPlayer);
+        IFactionPlayer target = context.argAsBestFPlayerMatch(0, context.fPlayer);
         if (target == null) {
             return;
         }
@@ -85,11 +85,6 @@ public class CmdOwner extends FCommand {
         if (context.faction.isPlayerInOwnerList(target, flocation)) {
             context.faction.removePlayerAsOwner(target, flocation);
             context.msg(TL.COMMAND_OWNER_REMOVED, playerName);
-            return;
-        }
-
-        // if economy is enabled, they're not on the bypass list, and this command has a cost set, make 'em pay
-        if (!context.payForCommand(Conf.econCostOwner, TL.COMMAND_OWNER_TOSET, TL.COMMAND_OWNER_FORSET)) {
             return;
         }
 

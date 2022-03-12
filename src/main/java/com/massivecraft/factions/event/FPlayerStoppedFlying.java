@@ -1,7 +1,8 @@
 package com.massivecraft.factions.event;
 
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 public class FPlayerStoppedFlying extends FactionPlayerEvent {
 
@@ -10,10 +11,10 @@ public class FPlayerStoppedFlying extends FactionPlayerEvent {
      */
 
     private static final HandlerList handlers = new HandlerList();
-    private FPlayer fPlayer;
+    private IFactionPlayer fPlayer;
 
 
-    public FPlayerStoppedFlying(FPlayer fPlayer) {
+    public FPlayerStoppedFlying(IFactionPlayer fPlayer) {
         super(fPlayer.getFaction(), fPlayer);
         this.fPlayer = fPlayer;
     }
@@ -23,10 +24,11 @@ public class FPlayerStoppedFlying extends FactionPlayerEvent {
     }
 
     @Override
-    public FPlayer getfPlayer() {
+    public IFactionPlayer getfPlayer() {
         return fPlayer;
     }
 
+    @NotNull
     public HandlerList getHandlers() {
         return handlers;
     }

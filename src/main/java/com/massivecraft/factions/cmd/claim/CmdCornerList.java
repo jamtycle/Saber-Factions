@@ -2,7 +2,7 @@ package com.massivecraft.factions.cmd.claim;
 
 import com.massivecraft.factions.Board;
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.cmd.Aliases;
 import com.massivecraft.factions.cmd.CommandContext;
@@ -46,7 +46,7 @@ public class CmdCornerList extends FCommand {
 
     }
 
-    public void handleCornerList(FPlayer fme, World world) {
+    public void handleCornerList(IFactionPlayer fme, World world) {
         ArrayList<FancyMessage> ret = new ArrayList<>();
         ret.add(new FancyMessage(FactionsPlugin.getInstance().txt.titleize(TL.COMMAND_CORNERLIST_TITLE.toString().replace("{world}", world.getName()))));
 

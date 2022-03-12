@@ -1,7 +1,7 @@
 package com.massivecraft.factions.cmd;
 
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.util.FastChunk;
@@ -25,7 +25,7 @@ public class CmdSpawnerChunk extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        Faction fac = context.faction;
+        IFaction fac = context.faction;
         Location location = context.player.getLocation();
         FastChunk fastChunk = new FastChunk(location.getWorld().getName(), location.getChunk().getX(), location.getChunk().getZ());
         if (fac.getSpawnerChunkCount() < fac.getAllowedSpawnerChunks()) {

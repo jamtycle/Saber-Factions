@@ -5,7 +5,6 @@ import com.massivecraft.factions.cmd.reserve.ReserveObject;
 import com.massivecraft.factions.discord.Discord;
 import com.massivecraft.factions.event.FPlayerJoinEvent;
 import com.massivecraft.factions.event.FactionCreateEvent;
-import com.massivecraft.factions.integration.Econ;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.util.Cooldown;
@@ -46,7 +45,7 @@ public class CmdCreate extends FCommand {
 
         String tag = context.argAsString(0);
 
-        if (context.fPlayer.hasFaction()) {
+        if (context.fPlayer.getHasFaction()) {
             context.msg(TL.COMMAND_CREATE_MUSTLEAVE);
             return;
         }
@@ -73,11 +72,6 @@ public class CmdCreate extends FCommand {
             return;
         }
 
-        // if economy is enabled, they're not on the bypass list, and this command has a cost set, make sure they can pay
-        if (!context.canAffordCommand(Conf.econCostCreate, TL.COMMAND_CREATE_TOCREATE.toString())) {
-            return;
-        }
-
         // trigger the faction creation event (cancellable)
         FactionCreateEvent createEvent = new FactionCreateEvent(context.player, tag);
         Bukkit.getServer().getPluginManager().callEvent(createEvent);
@@ -85,12 +79,7 @@ public class CmdCreate extends FCommand {
             return;
         }
 
-        // then make 'em pay (if applicable)
-        if (!context.payForCommand(Conf.econCostCreate, TL.COMMAND_CREATE_TOCREATE, TL.COMMAND_CREATE_FORCREATE)) {
-            return;
-        }
-
-        Faction faction = Factions.getInstance().createFaction();
+        IFaction faction = Factions.getInstance().createFaction();
 
         // TODO: Why would this even happen??? Auto increment clash??
         if (faction == null) {
@@ -104,7 +93,7 @@ public class CmdCreate extends FCommand {
             FactionsPlugin.getInstance().getFactionReserves().remove(factionReserve);
         }
         // trigger the faction join event for the creator
-        FPlayerJoinEvent joinEvent = new FPlayerJoinEvent(FPlayers.getInstance().getByPlayer(context.player), faction, FPlayerJoinEvent.PlayerJoinReason.CREATE);
+        FPlayerJoinEvent joinEvent = new FPlayerJoinEvent(FactionPlayersManagerBase.getInstance().getByPlayer(context.player), faction, FPlayerJoinEvent.PlayerJoinReason.CREATE);
         Bukkit.getServer().getPluginManager().callEvent(joinEvent);
         // join event cannot be cancelled or you'll have an empty faction
         // finish setting up the FPlayer
@@ -116,7 +105,7 @@ public class CmdCreate extends FCommand {
 
         Cooldown.setCooldown(context.fPlayer.getPlayer(), "createCooldown", FactionsPlugin.getInstance().getConfig().getInt("fcooldowns.f-create"));
         if (FactionsPlugin.getInstance().getConfig().getBoolean("faction-creation-broadcast", true)) {
-            for (FPlayer follower : FPlayers.getInstance().getOnlinePlayers()) {
+            for (IFactionPlayer follower : FactionPlayersManagerBase.getInstance().getOnlinePlayers()) {
                 follower.msg(TL.COMMAND_CREATE_CREATED, context.fPlayer.getName(), faction.getTag(follower));
             }
         }
@@ -139,7 +128,6 @@ public class CmdCreate extends FCommand {
         }
         //End Discord
         context.msg(TL.COMMAND_CREATE_YOUSHOULD, FactionsPlugin.getInstance().cmdBase.cmdDescription.getUsageTemplate(context));
-        if (Conf.econEnabled) Econ.setBalance(faction.getAccountId(), Conf.econFactionStartingBalance);
         if (Conf.logFactionCreate)
             Logger.print(context.fPlayer.getName() + TL.COMMAND_CREATE_CREATEDLOG + tag, Logger.PrefixType.DEFAULT);
         if(Conf.allFactionsPeaceful) {

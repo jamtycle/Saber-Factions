@@ -1,7 +1,7 @@
 package com.massivecraft.factions.util;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -19,8 +19,8 @@ public class Cooldown {
         player.setMetadata(name, new FixedMetadataValue(FactionsPlugin.getInstance(), System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds)));
     }
 
-    public static void setCooldown(Faction fac, String name, int seconds) {
-        for (FPlayer fPlayer : fac.getFPlayersWhereOnline(true)) {
+    public static void setCooldown(IFaction fac, String name, int seconds) {
+        for (IFactionPlayer fPlayer : fac.getFPlayersWhereOnline(true)) {
             if (fPlayer == null) continue;
             fPlayer.getPlayer().setMetadata(name, new FixedMetadataValue(FactionsPlugin.getInstance(), System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds)));
         }

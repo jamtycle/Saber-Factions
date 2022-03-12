@@ -48,11 +48,6 @@ public class CmdStuck extends FCommand {
             context.msg(TL.COMMAND_STUCK_EXISTS, time);
         } else {
 
-            // if economy is enabled, they're not on the bypass list, and this command has a cost set, make 'em pay
-            if (!context.payForCommand(Conf.econCostStuck, TL.COMMAND_STUCK_TOSTUCK.format(context.fPlayer.getName()), TL.COMMAND_STUCK_FORSTUCK.format(context.fPlayer.getName()))) {
-                return;
-            }
-
             final int id = Bukkit.getScheduler().runTaskLater(FactionsPlugin.getInstance(), new Runnable() {
 
                 @Override
@@ -76,7 +71,7 @@ public class CmdStuck extends FCommand {
                         @Override
                         public boolean work() {
                             FLocation chunk = currentFLocation();
-                            Faction faction = board.getFactionAt(chunk);
+                            IFaction faction = board.getFactionAt(chunk);
                             int buffer = FactionsPlugin.getInstance().getConfig().getInt("world-border.buffer", 0);
                             if (faction.isWilderness() && !chunk.isOutsideWorldBorder(buffer)) {
                                 int cx = FLocation.chunkToBlock((int) chunk.getX());

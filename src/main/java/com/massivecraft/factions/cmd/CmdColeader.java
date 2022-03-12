@@ -1,10 +1,8 @@
 package com.massivecraft.factions.cmd;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
-import com.massivecraft.factions.FactionsPlugin;
-import com.massivecraft.factions.cmd.audit.FLogType;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Role;
 import com.massivecraft.factions.zcore.util.TL;
@@ -31,14 +29,14 @@ public class CmdColeader extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        FPlayer you = context.argAsBestFPlayerMatch(0);
+        IFactionPlayer you = context.argAsBestFPlayerMatch(0);
         if (you == null) {
             FancyMessage msg = new FancyMessage(TL.COMMAND_COLEADER_CANDIDATES.toString()).color(ChatColor.GOLD);
-            for (FPlayer player : context.faction.getFPlayersWhereRole(Role.NORMAL)) {
+            for (IFactionPlayer player : context.faction.getFPlayersWhereRole(Role.NORMAL)) {
                 String s = player.getName();
                 msg.then(s + " ").color(ChatColor.WHITE).tooltip(TL.COMMAND_MOD_CLICKTOPROMOTE + s).command("/" + Conf.baseCommandAliases.get(0) + " coleader " + s);
             }
-            for (FPlayer player : context.faction.getFPlayersWhereRole(Role.MODERATOR)) {
+            for (IFactionPlayer player : context.faction.getFPlayersWhereRole(Role.MODERATOR)) {
                 String s = player.getName();
                 msg.then(s + " ").color(ChatColor.WHITE).tooltip(TL.COMMAND_MOD_CLICKTOPROMOTE + s).command("/" + Conf.baseCommandAliases.get(0) + " coleader " + s);
             }
@@ -48,7 +46,7 @@ public class CmdColeader extends FCommand {
         }
 
         boolean permAny = Permission.COLEADER_ANY.has(context.sender, false);
-        Faction targetFaction = you.getFaction();
+        IFaction targetFaction = you.getFaction();
 
         if (targetFaction != context.faction && !permAny) {
             context.msg(TL.COMMAND_MOD_NOTMEMBER, you.describeTo(context.fPlayer, true));
@@ -84,7 +82,6 @@ public class CmdColeader extends FCommand {
             you.setRole(Role.COLEADER);
             targetFaction.msg(TL.COMMAND_COLEADER_PROMOTED, you.describeTo(targetFaction, true));
             context.msg(TL.COMMAND_COLEADER_PROMOTES, you.describeTo(context.fPlayer, true));
-            FactionsPlugin.instance.getFlogManager().log(targetFaction, FLogType.RANK_EDIT, context.fPlayer.getName(), you.getName(), ChatColor.RED + "Co-Leader");
         }
 
     }

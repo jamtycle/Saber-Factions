@@ -1,9 +1,9 @@
 package com.massivecraft.factions.tag;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
-import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.FactionsPlugin;
+import com.massivecraft.factions.mysql.Faction;
+import com.massivecraft.factions.mysql.FactionPlayer;
+import com.massivecraft.factions.mysql.FactionsManager;
 import com.massivecraft.factions.struct.Relation;
 import com.massivecraft.factions.util.MiscUtil;
 import com.massivecraft.factions.util.QuadFunction;
@@ -26,11 +26,12 @@ public enum FancyTag implements Tag {
         List<FancyMessage> fancyMessages = new ArrayList<>();
         FancyMessage currentOnline = FactionsPlugin.getInstance().txt.parseFancy(prefix);
         boolean firstOnline = true;
-        for (FPlayer p : MiscUtil.rankOrder(target.getFPlayersWhereOnline(true, fme))) {
-            if (fme.getPlayer() != null && !fme.getPlayer().canSee(p.getPlayer())) {
+        for (FactionPlayer p : MiscUtil.rankOrder(target.getFPlayersWhereOnline(true, fme))) {
+            fme.getPlayer();
+            if (!fme.getPlayer().canSee(p.getPlayer())) {
                 continue; // skip
             }
-            String name = p.getNameAndTitle();
+            String name = p.getPlayer_name();
             currentOnline.then(firstOnline ? name : ", " + name);
             currentOnline.tooltip(tipPlayer(p, gm)).color(fme.getColorTo(p));
             firstOnline = false;
@@ -46,10 +47,10 @@ public enum FancyTag implements Tag {
         List<FancyMessage> fancyMessages = new ArrayList<>();
         FancyMessage currentOffline = FactionsPlugin.getInstance().txt.parseFancy(prefix);
         boolean firstOffline = true;
-        for (FPlayer p : MiscUtil.rankOrder(target.getFPlayers())) {
-            String name = p.getNameAndTitle();
+        for (FactionPlayer p : MiscUtil.rankOrder(target.getFaction_Players())) {
+            String name = p.getPlayer_name();
             // Also make sure to add players that are online BUT can't be seen.
-            if (!p.isOnline() || (fme.getPlayer() != null && p.isOnline() && !fme.getPlayer().canSee(p.getPlayer()))) {
+            if (!p.isOnline() || p.isOnline() && !fme.getPlayer().canSee(p.getPlayer())) {
                 currentOffline.then(firstOffline ? name : ", " + name);
                 currentOffline.tooltip(tipPlayer(p, gm)).color(fme.getColorTo(p));
                 firstOffline = false;
@@ -65,18 +66,20 @@ public enum FancyTag implements Tag {
     ;
 
     private final String tag;
-    private final QuadFunction<Faction, FPlayer, String, Map<UUID, String>, List<FancyMessage>> function;
+    private final QuadFunction<Faction, FactionPlayer, String, Map<UUID, String>, List<FancyMessage>> function;
 
-    FancyTag(String tag, QuadFunction<Faction, FPlayer, String, Map<UUID, String>, List<FancyMessage>> function) {
+    FancyTag(String tag, QuadFunction<Faction, FactionPlayer, String, Map<UUID, String>, List<FancyMessage>> function) {
         this.tag = tag;
         this.function = function;
     }
 
-    private static List<FancyMessage> processRelation(String prefix, Faction faction, FPlayer fPlayer, Relation relation) {
+    private static List<FancyMessage> processRelation(String prefix, Faction faction, FactionPlayer fPlayer, Relation relation) {
+        if(FactionsManager.instance != null) return null;
+
         List<FancyMessage> fancyMessages = new ArrayList<>();
         FancyMessage message = FactionsPlugin.getInstance().txt.parseFancy(prefix);
         boolean first = true;
-        for (Faction otherFaction : Factions.getInstance().getAllFactions()) {
+        for (Faction otherFaction : FactionsManager.instance.getAllFactions()) {
             if (otherFaction == faction) {
                 continue;
             }
@@ -95,7 +98,7 @@ public enum FancyTag implements Tag {
         return first && Tag.isMinimalShow() ? null : fancyMessages;
     }
 
-    public static List<FancyMessage> parse(String text, Faction faction, FPlayer player, Map<UUID, String> groupMap) {
+    public static List<FancyMessage> parse(String text, Faction faction, FactionPlayer player, Map<UUID, String> groupMap) {
         for (FancyTag tag : VALUES) {
             if (tag.foundInString(text)) {
                 return tag.getMessage(text, faction, player, groupMap);
@@ -123,7 +126,7 @@ public enum FancyTag implements Tag {
      * @param faction faction to tooltip for
      * @return list of tooltips for a fancy message
      */
-    private static List<String> tipFaction(Faction faction, FPlayer player) {
+    private static List<String> tipFaction(Faction faction, FactionPlayer player) {
         List<String> lines = new ArrayList<>();
         for (String line : FactionsPlugin.getInstance().getConfig().getStringList("tooltips.list")) {
             String string = Tag.parsePlain(faction, player, line);
@@ -141,14 +144,14 @@ public enum FancyTag implements Tag {
      * @param fplayer player to tooltip for
      * @return list of tooltips for a fancy message
      */
-    private static List<String> tipPlayer(FPlayer fplayer, Map<UUID, String> groupMap) {
+    private static List<String> tipPlayer(FactionPlayer fplayer, Map<UUID, String> groupMap) {
         List<String> lines = new ArrayList<>();
         for (String line : FactionsPlugin.getInstance().getConfig().getStringList("tooltips.show")) {
             String newLine = line;
             everythingOnYourWayOut:
             if (line.contains("{group}")) {
                 if (groupMap != null) {
-                    String group = groupMap.get(UUID.fromString(fplayer.getId()));
+                    String group = groupMap.get(UUID.fromString(fplayer.getPlayer_UUID()));
                     if (!group.trim().isEmpty()) {
                         newLine = newLine.replace("{group}", group);
                         break everythingOnYourWayOut;
@@ -177,7 +180,7 @@ public enum FancyTag implements Tag {
         return test != null && test.contains(this.tag);
     }
 
-    public List getMessage(String text, Faction faction, FPlayer player, Map<UUID, String> groupMap) {
+    public List getMessage(String text, Faction faction, FactionPlayer player, Map<UUID, String> groupMap) {
         if (!this.foundInString(text)) {
             return Collections.EMPTY_LIST; // We really, really shouldn't be here.
         }

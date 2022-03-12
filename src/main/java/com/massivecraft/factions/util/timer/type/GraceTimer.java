@@ -1,8 +1,8 @@
 package com.massivecraft.factions.util.timer.type;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.util.timer.GlobalTimer;
 import com.massivecraft.factions.zcore.file.CustomFile;
 import org.bukkit.Material;
@@ -32,7 +32,7 @@ public class GraceTimer extends GlobalTimer implements Listener {
 
     @EventHandler
     public void onTNTPlace(BlockPlaceEvent event) {
-        FPlayer fp = FPlayers.getInstance().getByPlayer(event.getPlayer());
+        IFactionPlayer fp = FactionPlayersManagerBase.getInstance().getByPlayer(event.getPlayer());
         if (getRemaining() > 0) {
             if (!fp.isAdminBypassing()) {
                 if (event.getBlock().getType().equals(Material.TNT)) {

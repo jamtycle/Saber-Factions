@@ -14,8 +14,8 @@ public class CmdPlayerTitleToggle extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        context.fPlayer.setTitlesEnabled(!context.fPlayer.hasTitlesEnabled());
-        context.msg(TL.COMMAND_TITLETOGGLE_TOGGLED, context.fPlayer.hasTitlesEnabled() ? CC.translate("&dEnabled") : CC.translate("&dDisabled"));
+        context.fPlayer.setTitlesEnabled(!context.fPlayer.getHasTitlesEnabled());
+        context.msg(TL.COMMAND_TITLETOGGLE_TOGGLED, context.fPlayer.getHasTitlesEnabled() ? CC.translate("&dEnabled") : CC.translate("&dDisabled"));
     }
 
     @Override

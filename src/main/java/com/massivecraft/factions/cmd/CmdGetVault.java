@@ -46,12 +46,8 @@ public class CmdGetVault extends FCommand {
 
         //has enough money?
         int amount = FactionsPlugin.getInstance().getConfig().getInt("fvault.Price");
-        if (!context.fPlayer.hasMoney(amount)) {
-            return;
-        }
 
         //success :)
-        context.fPlayer.takeMoney(amount);
         context.player.getInventory().addItem(vault);
         context.fPlayer.msg(TL.COMMAND_GETVAULT_RECEIVE);
 

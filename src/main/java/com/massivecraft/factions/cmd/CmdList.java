@@ -1,7 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
@@ -41,12 +40,7 @@ public class CmdList extends FCommand {
     public void perform(CommandContext context) {
         FactionsPlugin.getInstance().getServer().getScheduler().runTaskAsynchronously(FactionsPlugin.instance, () -> {
 
-
-            // if economy is enabled, they're not on the bypass list, and this command has a cost set, make 'em pay
-            if (!context.payForCommand(Conf.econCostList, "to list the factions", "for listing the factions"))
-                return;
-
-            ArrayList<Faction> factionList = Factions.getInstance().getAllFactions();
+            ArrayList<IFaction> factionList = Factions.getInstance().getAllFactions();
             factionList.remove(Factions.getInstance().getWilderness());
             factionList.remove(Factions.getInstance().getSafeZone());
             factionList.remove(Factions.getInstance().getWarZone());
@@ -106,7 +100,7 @@ public class CmdList extends FCommand {
             header = header.replace("{pagenumber}", String.valueOf(pagenumber)).replace("{pagecount}", String.valueOf(pagecount));
             lines.add(FactionsPlugin.getInstance().txt.parse(header));
 
-            for (Faction faction : factionList.subList(start, end)) {
+            for (IFaction faction : factionList.subList(start, end)) {
                 if (faction.isWilderness()) {
                     lines.add(FactionsPlugin.getInstance().txt.parse(TagUtil.parsePlain(faction, FactionsPlugin.getInstance().getConfig().getString("list.factionless", defaults[1]))));
                     continue;

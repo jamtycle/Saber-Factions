@@ -1,6 +1,6 @@
 package com.massivecraft.factions.scoreboards.sidebar;
 
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.scoreboards.FSidebarProvider;
 
@@ -15,13 +15,13 @@ public class FDefaultSidebar extends FSidebarProvider {
      */
 
     @Override
-    public String getTitle(FPlayer fplayer) {
+    public String getTitle(IFactionPlayer fplayer) {
         return replaceTags(fplayer, FactionsPlugin.getInstance().getConfig().getString("scoreboard.default-title", "{name}"));
     }
 
     @Override
-    public List<String> getLines(FPlayer fplayer) {
-        if (fplayer.hasFaction()) {
+    public List<String> getLines(IFactionPlayer fplayer) {
+        if (fplayer.getHasFaction()) {
             return getOutput(fplayer, "scoreboard.default");
         } else if (FactionsPlugin.getInstance().getConfig().getBoolean("scoreboard.factionless-enabled", false)) {
             return getOutput(fplayer, "scoreboard.factionless");
@@ -29,7 +29,7 @@ public class FDefaultSidebar extends FSidebarProvider {
         return getOutput(fplayer, "scoreboard.default"); // no faction, factionless-board disabled
     }
 
-    public List<String> getOutput(FPlayer fplayer, String list) {
+    public List<String> getOutput(IFactionPlayer fplayer, String list) {
         List<String> lines = FactionsPlugin.getInstance().getConfig().getStringList(list);
 
         if (lines == null || lines.isEmpty()) {

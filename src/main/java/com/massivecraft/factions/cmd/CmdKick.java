@@ -1,14 +1,12 @@
 package com.massivecraft.factions.cmd;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
-import com.massivecraft.factions.cmd.audit.FLogType;
 import com.massivecraft.factions.event.FPlayerLeaveEvent;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Role;
-import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.util.Logger;
 import com.massivecraft.factions.zcore.fperms.PermissableAction;
 import com.massivecraft.factions.zcore.util.TL;
@@ -37,22 +35,22 @@ public class CmdKick extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        FPlayer toKick = context.argIsSet(0) ? context.argAsBestFPlayerMatch(0) : null;
+        IFactionPlayer toKick = context.argIsSet(0) ? context.argAsBestFPlayerMatch(0) : null;
         if (toKick == null) {
             FancyMessage msg = new FancyMessage(TL.COMMAND_KICK_CANDIDATES.toString()).color(ChatColor.GOLD);
-            for (FPlayer player : context.faction.getFPlayersWhereRole(Role.NORMAL)) {
+            for (IFactionPlayer player : context.faction.getFPlayersWhereRole(Role.NORMAL)) {
                 String s = player.getName();
                 msg.then(s + " ").color(ChatColor.WHITE).tooltip(TL.COMMAND_KICK_CLICKTOKICK + s).command("/" + Conf.baseCommandAliases.get(0) + " kick " + s);
             }
             if (context.fPlayer.getRole().isAtLeast(Role.COLEADER)) {
                 // For both coleader and admin, add mods.
-                for (FPlayer player : context.faction.getFPlayersWhereRole(Role.MODERATOR)) {
+                for (IFactionPlayer player : context.faction.getFPlayersWhereRole(Role.MODERATOR)) {
                     String s = player.getName();
                     msg.then(s + " ").color(ChatColor.GRAY).tooltip(TL.COMMAND_KICK_CLICKTOKICK + s).command("/" + Conf.baseCommandAliases.get(0) + " kick " + s);
                 }
                 if (context.fPlayer.getRole() == Role.LEADER) {
                     // Only add coleader to this for the leader.
-                    for (FPlayer player : context.faction.getFPlayersWhereRole(Role.COLEADER)) {
+                    for (IFactionPlayer player : context.faction.getFPlayersWhereRole(Role.COLEADER)) {
                         String s = player.getName();
                         msg.then(s + " ").color(ChatColor.RED).tooltip(TL.COMMAND_KICK_CLICKTOKICK + s).command("/" + Conf.baseCommandAliases.get(0) + " kick " + s);
                     }
@@ -69,7 +67,7 @@ public class CmdKick extends FCommand {
             return;
         }
 
-        Faction toKickFaction = toKick.getFaction();
+        IFaction toKickFaction = toKick.getFaction();
 
         if (toKickFaction.isWilderness()) {
             context.sender.sendMessage(TL.COMMAND_KICK_NONE.toString());
@@ -96,20 +94,10 @@ public class CmdKick extends FCommand {
             }
         }
 
-        // if economy is enabled, they're not on the bypass list, and this command has a cost set, make sure they can pay
-        if (!context.canAffordCommand(Conf.econCostKick, TL.COMMAND_KICK_TOKICK.toString())) {
-            return;
-        }
-
         // trigger the leave event (cancellable) [reason:kicked]
         FPlayerLeaveEvent event = new FPlayerLeaveEvent(toKick, toKick.getFaction(), FPlayerLeaveEvent.PlayerLeaveReason.KICKED);
         Bukkit.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
-            return;
-        }
-
-        // then make 'em pay (if applicable)
-        if (!context.payForCommand(Conf.econCostKick, TL.COMMAND_KICK_TOKICK.toString(), TL.COMMAND_KICK_FORKICK.toString())) {
             return;
         }
 
@@ -126,7 +114,6 @@ public class CmdKick extends FCommand {
         if (toKick.getRole() == Role.LEADER) {
             toKickFaction.promoteNewLeader();
         }
-        FactionsPlugin.instance.logFactionEvent(toKickFaction, FLogType.INVITES, context.fPlayer.getName(), CC.Red + "kicked", toKick.getName());
         toKickFaction.deinvite(toKick);
         toKick.resetFactionData();
     }

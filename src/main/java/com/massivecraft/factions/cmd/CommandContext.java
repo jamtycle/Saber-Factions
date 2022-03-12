@@ -1,9 +1,7 @@
 package com.massivecraft.factions.cmd;
 
 import com.massivecraft.factions.*;
-import com.massivecraft.factions.integration.Econ;
 import com.massivecraft.factions.struct.Role;
-import com.massivecraft.factions.util.WarmUpUtil;
 import com.massivecraft.factions.zcore.util.TL;
 import mkremins.fanciful.FancyMessage;
 import org.bukkit.Bukkit;
@@ -26,8 +24,8 @@ public class CommandContext {
     public CommandSender sender;
 
     public Player player;
-    public FPlayer fPlayer;
-    public Faction faction;
+    public IFactionPlayer fPlayer;
+    public IFaction faction;
 
     public List<String> args;
     public String alias;
@@ -41,7 +39,7 @@ public class CommandContext {
 
         if (sender instanceof Player) {
             this.player = (Player) sender;
-            this.fPlayer = FPlayers.getInstance().getByPlayer(player);
+            this.fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
             this.faction = fPlayer.getFaction();
         }
     }
@@ -226,11 +224,11 @@ public class CommandContext {
     // -------------------------------------------- //
 
     // FPLAYER ======================
-    public FPlayer strAsFPlayer(String name, FPlayer def, boolean msg) {
-        FPlayer ret = def;
+    public IFactionPlayer strAsFPlayer(String name, IFactionPlayer def, boolean msg) {
+        IFactionPlayer ret = def;
 
         if (name != null) {
-            for (FPlayer fplayer : FPlayers.getInstance().getAllFPlayers()) {
+            for (IFactionPlayer fplayer : FactionPlayersManagerBase.getInstance().getAllFPlayers()) {
                 if (fplayer.getName().equalsIgnoreCase(name)) {
                     ret = fplayer;
                     break;
@@ -245,42 +243,42 @@ public class CommandContext {
         return ret;
     }
 
-    public FPlayer argAsFPlayer(int idx, FPlayer def, boolean msg) {
+    public IFactionPlayer argAsFPlayer(int idx, IFactionPlayer def, boolean msg) {
         return this.strAsFPlayer(argAsString(idx), def, msg);
     }
 
-    public FPlayer argAsFPlayer(int idx, FPlayer def) {
+    public IFactionPlayer argAsFPlayer(int idx, IFactionPlayer def) {
         return argAsFPlayer(idx, def, true);
     }
 
-    public FPlayer argAsFPlayer(int idx) {
+    public IFactionPlayer argAsFPlayer(int idx) {
         return argAsFPlayer(idx, null);
     }
 
     // BEST FPLAYER MATCH ======================
-    public FPlayer strAsBestFPlayerMatch(String name, FPlayer def, boolean msg) {
+    public IFactionPlayer strAsBestFPlayerMatch(String name, IFactionPlayer def, boolean msg) {
         return strAsFPlayer(name, def, msg);
     }
 
-    public FPlayer argAsBestFPlayerMatch(int idx, FPlayer def, boolean msg) {
+    public IFactionPlayer argAsBestFPlayerMatch(int idx, IFactionPlayer def, boolean msg) {
         return this.strAsBestFPlayerMatch(argAsString(idx), def, msg);
     }
 
-    public FPlayer argAsBestFPlayerMatch(int idx, FPlayer def) {
+    public IFactionPlayer argAsBestFPlayerMatch(int idx, IFactionPlayer def) {
         return argAsBestFPlayerMatch(idx, def, true);
     }
 
-    public FPlayer argAsBestFPlayerMatch(int idx) {
+    public IFactionPlayer argAsBestFPlayerMatch(int idx) {
         return argAsBestFPlayerMatch(idx, null);
     }
 
     // FACTION ======================
-    public Faction strAsFaction(String name, Faction def, boolean msg) {
-        Faction ret = def;
+    public IFaction strAsFaction(String name, IFaction def, boolean msg) {
+        IFaction ret = def;
 
         if (name != null) {
             // First we try an exact match
-            Faction faction = Factions.getInstance().getByTag(name); // Checks for faction name match.
+            IFaction faction = Factions.getInstance().getByTag(name); // Checks for faction name match.
 
             // Now lets try for warzone / safezone. Helpful for custom warzone / safezone names.
             // Do this after we check for an exact match in case they rename the warzone / safezone
@@ -300,7 +298,7 @@ public class CommandContext {
 
             // Next we match player names
             if (faction == null) {
-                FPlayer fplayer = strAsFPlayer(name, null, false);
+                IFactionPlayer fplayer = strAsFPlayer(name, null, false);
                 if (fplayer != null) {
                     faction = fplayer.getFaction();
                 }
@@ -318,15 +316,15 @@ public class CommandContext {
         return ret;
     }
 
-    public Faction argAsFaction(int idx, Faction def, boolean msg) {
+    public IFaction argAsFaction(int idx, IFaction def, boolean msg) {
         return this.strAsFaction(argAsString(idx), def, msg);
     }
 
-    public Faction argAsFaction(int idx, Faction def) {
+    public IFaction argAsFaction(int idx, IFaction def) {
         return argAsFaction(idx, def, true);
     }
 
-    public Faction argAsFaction(int idx) {
+    public IFaction argAsFaction(int idx) {
         return argAsFaction(idx, null);
     }
 
@@ -339,7 +337,7 @@ public class CommandContext {
             return true;
         }
 
-        if (!fPlayer.hasFaction()) {
+        if (!fPlayer.getHasFaction()) {
             sendMessage("You are not member of any faction.");
             return false;
         }
@@ -361,9 +359,9 @@ public class CommandContext {
     /*
         Common Methods
     */
-    public boolean canIAdministerYou(FPlayer i, FPlayer you) {
+    public boolean canIAdministerYou(IFactionPlayer i, IFactionPlayer you) {
         if (!i.getFaction().equals(you.getFaction())) {
-            i.msg(TL.COMMAND_CONTEXT_ADMINISTER_DIF_FACTION, you.describeTo(i, true));
+            i.sendMessage(FactionsPlugin.getInstance().txt.parse(you.describeTo(i, true), TL.COMMAND_CONTEXT_ADMINISTER_DIF_FACTION));
             return false;
         }
 
@@ -375,43 +373,4 @@ public class CommandContext {
 
         return false;
     }
-
-    // if economy is enabled and they're not on the bypass list, make 'em pay; returns true unless person can't afford the cost
-    public boolean payForCommand(double cost, String toDoThis, String forDoingThis) {
-        if (!Econ.shouldBeUsed() || this.fPlayer == null || cost == 0.0 || fPlayer.isAdminBypassing()) {
-            return true;
-        }
-
-        if (Conf.bankEnabled && Conf.bankFactionPaysCosts && fPlayer.hasFaction()) {
-            return Econ.modifyMoney(faction, -cost, toDoThis, forDoingThis);
-        } else {
-            return Econ.modifyMoney(fPlayer, -cost, toDoThis, forDoingThis);
-        }
-    }
-
-    public boolean payForCommand(double cost, TL toDoThis, TL forDoingThis) {
-        return payForCommand(cost, toDoThis.toString(), forDoingThis.toString());
-    }
-
-    // like above, but just make sure they can pay; returns true unless person can't afford the cost
-    public boolean canAffordCommand(double cost, String toDoThis) {
-        if (!Econ.shouldBeUsed() || fPlayer == null || cost == 0.0 || fPlayer.isAdminBypassing()) {
-            return true;
-        }
-
-        if (Conf.bankEnabled && Conf.bankFactionPaysCosts && fPlayer.hasFaction()) {
-            return Econ.hasAtLeast(faction, cost, toDoThis);
-        } else {
-            return Econ.hasAtLeast(fPlayer, cost, toDoThis);
-        }
-    }
-
-    public void doWarmUp(WarmUpUtil.Warmup warmup, TL translationKey, String action, Runnable runnable, long delay) {
-        this.doWarmUp(fPlayer, warmup, translationKey, action, runnable, delay);
-    }
-
-    public void doWarmUp(FPlayer player, WarmUpUtil.Warmup warmup, TL translationKey, String action, Runnable runnable, long delay) {
-        WarmUpUtil.process(player, warmup, translationKey, action, runnable, delay);
-    }
-
 }

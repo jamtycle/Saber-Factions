@@ -1,8 +1,10 @@
 package com.massivecraft.factions.scoreboards.sidebar;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
+import com.massivecraft.factions.mysql.Faction;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import com.massivecraft.factions.scoreboards.FSidebarProvider;
 
 import java.util.List;
@@ -16,17 +18,17 @@ public class FInfoSidebar extends FSidebarProvider {
 
     private final Faction faction;
 
-    public FInfoSidebar(Faction faction) {
-        this.faction = faction;
+    public FInfoSidebar(Faction _faction) {
+        faction = _faction;
     }
 
     @Override
-    public String getTitle(FPlayer fplayer) {
-        return faction.getRelationTo(fplayer).getColor() + faction.getTag();
+    public String getTitle(FactionPlayer _player) {
+        return faction.getRelationTo(_player).getColor() + faction.getFaction_tag();
     }
 
     @Override
-    public List<String> getLines(FPlayer fplayer) {
+    public List<String> getLines(FactionPlayer fplayer) {
         List<String> lines = FactionsPlugin.getInstance().getConfig().getStringList("scoreboard.finfo");
 
         ListIterator<String> it = lines.listIterator();

@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.Logger;
@@ -43,13 +43,23 @@ public class JSONFactions extends MemoryFactions {
         return file;
     }
 
+    @Override
+    public IFaction getFactionById(int id) {
+        return null;
+    }
+
+    @Override
+    public void removeFaction(int id) {
+
+    }
+
     public void forceSave() {
         forceSave(true);
     }
 
     public void forceSave(boolean sync) {
         final Map<String, JSONFaction> entitiesThatShouldBeSaved = new HashMap<>();
-        for (Faction entity : this.factions.values())
+        for (IFaction entity : this.factions.values())
             entitiesThatShouldBeSaved.put(entity.getId(), (JSONFaction) entity);
 
         saveCore(file, entitiesThatShouldBeSaved, sync);
@@ -81,7 +91,7 @@ public class JSONFactions extends MemoryFactions {
         int needsUpdate = 0;
         for (Entry<String, JSONFaction> entry : data.entrySet()) {
             String id = entry.getKey();
-            Faction f = entry.getValue();
+            IFaction f = entry.getValue();
             f.checkPerms();
             f.setId(id);
             this.updateNextIdForId(id);
@@ -109,7 +119,7 @@ public class JSONFactions extends MemoryFactions {
             // Update claim ownership
 
             for (String string : data.keySet()) {
-                Faction f = data.get(string);
+                IFaction f = data.get(string);
                 Map<FLocation, Set<String>> claims = f.getClaimOwnership();
                 for (FLocation key : claims.keySet()) {
                     Set<String> set = claims.get(key);
@@ -139,7 +149,7 @@ public class JSONFactions extends MemoryFactions {
             // Update invites
 
             for (String string : data.keySet()) {
-                Faction f = data.get(string);
+                IFaction f = data.get(string);
                 Set<String> invites = f.getInvites();
                 Set<String> list = whichKeysNeedMigration(invites);
 
@@ -212,15 +222,15 @@ public class JSONFactions extends MemoryFactions {
     }
 
     @Override
-    public Faction generateFactionObject() {
+    public IFaction generateFactionObject() {
         String id = getNextId();
-        Faction faction = new JSONFaction(id);
+        IFaction faction = new JSONFaction(id);
         updateNextIdForId(id);
         return faction;
     }
 
     @Override
-    public Faction generateFactionObject(String id) {
+    public IFaction generateFactionObject(String id) {
         return new JSONFaction(id);
     }
 

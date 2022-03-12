@@ -1,7 +1,7 @@
 package com.massivecraft.factions.missions;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.zcore.util.TL;
@@ -38,7 +38,7 @@ public class MissionHandler implements Listener {
         if (!(event.getOwner() instanceof Player)) {
             return;
         }
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer((Player) event.getOwner());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer((Player) event.getOwner());
         if (fPlayer == null) {
             return;
         }
@@ -58,7 +58,7 @@ public class MissionHandler implements Listener {
         if (event.getEntity() == null || event.getEntity().getKiller() == null) {
             return;
         }
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(event.getEntity().getKiller());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(event.getEntity().getKiller());
         if (fPlayer == null) {
             return;
         }
@@ -75,7 +75,7 @@ public class MissionHandler implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(event.getPlayer());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(event.getPlayer());
         if (fPlayer == null) {
             return;
         }
@@ -92,7 +92,7 @@ public class MissionHandler implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(event.getPlayer());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(event.getPlayer());
         if (fPlayer == null) {
             return;
         }
@@ -112,7 +112,7 @@ public class MissionHandler implements Listener {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) {
             return;
         }
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(event.getPlayer());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(event.getPlayer());
         if (fPlayer == null) {
             return;
         }
@@ -126,7 +126,7 @@ public class MissionHandler implements Listener {
 
     @EventHandler
     public void onPlayerEnchant(EnchantItemEvent e) {
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(e.getEnchanter());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(e.getEnchanter());
         if (fPlayer == null) {
             return;
         }
@@ -140,7 +140,7 @@ public class MissionHandler implements Listener {
 
     @EventHandler
     public void onPlayerConsume(PlayerItemConsumeEvent e) {
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(e.getPlayer());
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(e.getPlayer());
         if (fPlayer == null) {
             return;
         }
@@ -156,7 +156,7 @@ public class MissionHandler implements Listener {
         }
     }
 
-    private void checkIfDone(FPlayer fPlayer, Mission mission, ConfigurationSection section) {
+    private void checkIfDone(IFactionPlayer fPlayer, Mission mission, ConfigurationSection section) {
         if (mission.getProgress() < section.getConfigurationSection("Mission").getLong("Amount")) {
             return;
         }

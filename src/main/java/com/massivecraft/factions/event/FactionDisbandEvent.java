@@ -1,7 +1,7 @@
 package com.massivecraft.factions.event;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.Factions;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -19,14 +19,14 @@ public class FactionDisbandEvent extends FactionEvent implements Cancellable {
     private final PlayerDisbandReason reason;
     private boolean cancelled = false;
 
-    public FactionDisbandEvent(Player sender, String factionId, PlayerDisbandReason reason) {
+    public FactionDisbandEvent(Player sender, int factionId, PlayerDisbandReason reason) {
         super(Factions.getInstance().getFactionById(factionId));
         this.sender = sender;
         this.reason = reason;
     }
 
-    public FPlayer getFPlayer() {
-        return FPlayers.getInstance().getByPlayer(sender);
+    public IFactionPlayer getFPlayer() {
+        return FactionPlayersManagerBase.getInstance().getByPlayer(sender);
     }
 
     public Player getPlayer() {

@@ -1,7 +1,7 @@
 package com.massivecraft.factions.util;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.zcore.util.TagUtil;
 import org.bukkit.Bukkit;
@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 public class TitleUtil {
 
-    public static void sendFactionChangeTitle(FPlayer me, Faction faction) {
+    public static void sendFactionChangeTitle(IFactionPlayer me, IFaction faction) {
         String title = FactionsPlugin.getInstance().getConfig().getString("Title.Format.Title");
         title = title.replace("{Faction}", faction.getColorTo(me) + faction.getTag());
         title = parseAllPlaceholders(title, faction, me.getPlayer());
@@ -32,7 +32,7 @@ public class TitleUtil {
     }
 
 
-    public static String parseAllPlaceholders(String string, Faction faction, Player player) {
+    public static String parseAllPlaceholders(String string, IFaction faction, Player player) {
         string = TagUtil.parsePlaceholders(player, string);
         string = string.replace("{Faction}", faction.getTag())
                 .replace("{online}", faction.getOnlinePlayers().size() + "")

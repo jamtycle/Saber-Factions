@@ -11,11 +11,11 @@ public class AutoLeaveProcessTask extends BukkitRunnable {
 
     private transient boolean readyToGo;
     private transient boolean finished;
-    private transient ListIterator<FPlayer> iterator;
+    private transient ListIterator<IFactionPlayer> iterator;
     private transient double toleranceMillis;
 
     public AutoLeaveProcessTask() {
-        ArrayList<FPlayer> fplayers = (ArrayList<FPlayer>) FPlayers.getInstance().getAllFPlayers();
+        ArrayList<IFactionPlayer> fplayers = (ArrayList<IFactionPlayer>) FactionPlayersManagerBase.getInstance().getAllFPlayers();
         this.iterator = fplayers.listIterator();
         this.toleranceMillis = Conf.autoLeaveAfterDaysOfInactivity * 24 * 60 * 60 * 1000;
         this.readyToGo = true;
@@ -45,27 +45,27 @@ public class AutoLeaveProcessTask extends BukkitRunnable {
                 return;
             }
 
-            FPlayer fplayer = iterator.next();
+            IFactionPlayer fplayer = iterator.next();
 
             // Check if they should be exempt from this.
             if (!fplayer.willAutoLeave()) {
                 FactionsPlugin.getInstance().getServer().getScheduler().runTaskAsynchronously(FactionsPlugin.instance, () -> Logger.print(fplayer.getName() + " was going to be auto-removed but was set not to.", Logger.PrefixType.DEFAULT));
                 continue;
             }
-            if (fplayer.hasFaction() && fplayer.isOffline() && now - fplayer.getLastLoginTime() > toleranceMillis) {
+            if (fplayer.getHasFaction() && fplayer.isOffline() && now - fplayer.getLastLoginTime() > toleranceMillis) {
                 if (Conf.logFactionLeave || Conf.logFactionKick) {
                     FactionsPlugin.getInstance().getServer().getScheduler().runTaskAsynchronously(FactionsPlugin.instance, () -> Logger.print("Player " + fplayer.getName() + " was auto-removed due to inactivity.", Logger.PrefixType.DEFAULT));
                 }
 
                 // if player is faction admin, sort out the faction since he's going away
                 if (fplayer.getRole() == Role.LEADER) {
-                    Faction faction = fplayer.getFaction();
+                    IFaction faction = fplayer.getFaction();
                     if (faction != null) {
                         fplayer.getFaction().promoteNewLeader(true);
                     }
                 }
 
-                fplayer.leave(false);
+                fplayer.leave();
                 iterator.remove();  // go ahead and remove this list's link to the FPlayer object
                 if (Conf.autoLeaveDeleteFPlayerData) {
                     fplayer.remove();

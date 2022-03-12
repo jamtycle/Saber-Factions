@@ -4,8 +4,8 @@ import com.cryptomorin.xseries.XMaterial;
 import com.github.stefvanschie.inventoryframework.Gui;
 import com.github.stefvanschie.inventoryframework.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.PaginatedPane;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.CC;
 import org.bukkit.ChatColor;
@@ -28,11 +28,11 @@ public class FDisbandFrame {
 
     private Gui gui;
 
-    public FDisbandFrame(Faction faction) {
+    public FDisbandFrame(IFaction faction) {
         this.gui = new Gui(FactionsPlugin.getInstance(), 1, ChatColor.translateAlternateColorCodes('&', Objects.requireNonNull(FactionsPlugin.getInstance().getConfig().getString("f-disband-gui.title"))));
     }
 
-    public void buildGUI(FPlayer fPlayer) {
+    public void buildGUI(IFactionPlayer fPlayer) {
         int i;
         PaginatedPane pane = new PaginatedPane(0, 0, 9, this.gui.getRows());
         List<GuiItem> GUIItems = new ArrayList<>();
@@ -76,7 +76,7 @@ public class FDisbandFrame {
     }
 
 
-    private ItemStack buildConfirmDummyItem(Faction faction) {
+    private ItemStack buildConfirmDummyItem(IFaction faction) {
         ConfigurationSection config = FactionsPlugin.getInstance().getConfig().getConfigurationSection("f-disband-gui.confirm-item");
         ItemStack item = XMaterial.matchXMaterial(config.getString("Type")).get().parseItem();
         ItemMeta meta = item.getItemMeta();

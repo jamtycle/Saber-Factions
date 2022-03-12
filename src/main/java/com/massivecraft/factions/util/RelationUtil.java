@@ -1,9 +1,9 @@
 package com.massivecraft.factions.util;
 
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
-import com.massivecraft.factions.iface.RelationParticipator;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
+import com.massivecraft.factions.iface.IRelationParticipator;
 import com.massivecraft.factions.struct.Relation;
 import com.massivecraft.factions.zcore.util.TL;
 import com.massivecraft.factions.zcore.util.TextUtil;
@@ -11,25 +11,27 @@ import org.bukkit.ChatColor;
 
 public class RelationUtil {
 
-    public static String describeThatToMe(RelationParticipator that, RelationParticipator me, boolean ucfirst) {
+    // TODO: Needs work, still uses Interfaces, need to remove that and implement the new MYSQL Classes
+
+    public static String describeThatToMe(IRelationParticipator that, IRelationParticipator me, boolean ucfirst) {
         String ret = "";
 
-        Faction thatFaction = getFaction(that);
+        IFaction thatFaction = getFaction(that);
         if (thatFaction == null) {
             return "ERROR"; // ERROR
         }
 
-        Faction myFaction = getFaction(me);
+        IFaction myFaction = getFaction(me);
 //		if (myFaction == null) return that.describeTo(null); // no relation, but can show basic name or tag
 
-        if (that instanceof Faction) {
-            if (me instanceof FPlayer && myFaction == thatFaction) {
+        if (that instanceof IFaction) {
+            if (me instanceof IFactionPlayer && myFaction == thatFaction) {
                 ret = TL.GENERIC_YOURFACTION.toString();
             } else {
                 ret = thatFaction.getTag();
             }
-        } else if (that instanceof FPlayer) {
-            FPlayer fplayerthat = (FPlayer) that;
+        } else if (that instanceof IFactionPlayer) {
+            IFactionPlayer fplayerthat = (IFactionPlayer) that;
             if (that == me) {
                 ret = TL.GENERIC_YOU.toString();
             } else if (thatFaction == myFaction) {
@@ -46,17 +48,17 @@ public class RelationUtil {
         return "" + getColorOfThatToMe(that, me) + ret;
     }
 
-    public static String describeThatToMe(RelationParticipator that, RelationParticipator me) {
+    public static String describeThatToMe(IRelationParticipator that, IRelationParticipator me) {
         return describeThatToMe(that, me, false);
     }
 
-    public static Relation getRelationTo(RelationParticipator me, RelationParticipator that) {
+    public static Relation getRelationTo(IRelationParticipator me, IRelationParticipator that) {
         return getRelationTo(that, me, false);
     }
 
-    public static Relation getRelationTo(RelationParticipator me, RelationParticipator that, boolean ignorePeaceful) {
-        Faction fthat = getFaction(that);
-        Faction fme = getFaction(me);
+    public static Relation getRelationTo(IRelationParticipator me, IRelationParticipator that, boolean ignorePeaceful) {
+        IFaction fthat = getFaction(that);
+        IFaction fme = getFaction(me);
 
         if (fthat == null || fme == null) {
             return Relation.NEUTRAL; // ERROR
@@ -81,21 +83,21 @@ public class RelationUtil {
         return fme.getRelationWish(fthat);
     }
 
-    public static Faction getFaction(RelationParticipator rp) {
-        if (rp instanceof Faction) {
-            return (Faction) rp;
+    public static IFaction getFaction(IRelationParticipator rp) {
+        if (rp instanceof IFaction) {
+            return (IFaction) rp;
         }
 
-        if (rp instanceof FPlayer) {
-            return ((FPlayer) rp).getFaction();
+        if (rp instanceof IFactionPlayer) {
+            return ((IFactionPlayer) rp).getFaction();
         }
 
         // ERROR
         return null;
     }
 
-    public static ChatColor getColorOfThatToMe(RelationParticipator that, RelationParticipator me) {
-        Faction thatFaction = getFaction(that);
+    public static ChatColor getColorOfThatToMe(IRelationParticipator that, IRelationParticipator me) {
+        IFaction thatFaction = getFaction(that);
 
         if (thatFaction != null && thatFaction != getFaction(me)) {
             if (thatFaction.isPeaceful())

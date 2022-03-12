@@ -1,6 +1,6 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.zcore.util.TL;
@@ -37,7 +37,7 @@ public class CmdSeeDiscord extends FCommand {
             }
         } else if (context.args.size() == 1) {
             if (context.fPlayer.isAdminBypassing()) {
-                Faction faction = context.argAsFaction(0);
+                IFaction faction = context.argAsFaction(0);
                 if (faction != null) {
                     if (faction.getDiscord() == null) {
                         context.msg(TL.COMMAND_DISCORDSEE_FACTION_NOTSET, faction.getTag());

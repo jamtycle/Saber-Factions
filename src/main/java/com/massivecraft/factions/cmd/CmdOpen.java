@@ -1,8 +1,7 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.struct.Permission;
 import com.massivecraft.factions.struct.Role;
@@ -29,10 +28,6 @@ public class CmdOpen extends FCommand {
 
     @Override
     public void perform(CommandContext context) {
-        // if economy is enabled, they're not on the bypass list, and this command has a cost set, make 'em pay
-        if (!context.payForCommand(Conf.econCostOpen, TL.COMMAND_OPEN_TOOPEN, TL.COMMAND_OPEN_FOROPEN)) {
-            return;
-        }
 
         if (Cooldown.isOnCooldown(context.fPlayer.getPlayer(), "openCooldown") && !context.fPlayer.isAdminBypassing()) {
             context.msg(TL.COMMAND_COOLDOWN);
@@ -44,7 +39,7 @@ public class CmdOpen extends FCommand {
         String open = context.faction.getOpen() ? TL.COMMAND_OPEN_OPEN.toString() : TL.COMMAND_OPEN_CLOSED.toString();
 
         // Inform
-        for (FPlayer fplayer : FPlayers.getInstance().getOnlinePlayers()) {
+        for (IFactionPlayer fplayer : FactionPlayersManagerBase.getInstance().getOnlinePlayers()) {
             if (fplayer.getFactionId().equals(context.faction.getId())) {
                 fplayer.msg(TL.COMMAND_OPEN_CHANGES, context.fPlayer.getName(), open);
                 Cooldown.setCooldown(fplayer.getPlayer(), "openCooldown", FactionsPlugin.getInstance().getConfig().getInt("fcooldowns.f-open"));
@@ -54,7 +49,7 @@ public class CmdOpen extends FCommand {
             fplayer.msg(TL.COMMAND_OPEN_CHANGED, context.faction.getTag(fplayer.getFaction()), open);
         }
         if (!FactionsPlugin.getInstance().getConfig().getBoolean("faction-open-broadcast")) {
-            for (FPlayer fPlayer : context.faction.getFPlayersWhereOnline(true)) {
+            for (IFactionPlayer fPlayer : context.faction.getFPlayersWhereOnline(true)) {
                 fPlayer.msg(TL.COMMAND_OPEN_CHANGED, context.faction.getTag(fPlayer.getFaction()), open);
             }
         }

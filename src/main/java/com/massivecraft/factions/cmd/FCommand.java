@@ -1,9 +1,8 @@
 package com.massivecraft.factions.cmd;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
-import com.massivecraft.factions.integration.Econ;
 import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.zcore.CommandVisibility;
 import com.massivecraft.factions.zcore.util.TL;
@@ -140,7 +139,7 @@ public abstract class FCommand {
     /*
         Common Logic
      */
-    public List<String> getToolTips(FPlayer player) {
+    public List<String> getToolTips(IFactionPlayer player) {
         List<String> lines = new ArrayList<>();
         for (String s : FactionsPlugin.getInstance().getConfig().getStringList("tooltips.show")) {
             lines.add(ChatColor.translateAlternateColorCodes('&', replaceFPlayerTags(s, player)));
@@ -148,7 +147,7 @@ public abstract class FCommand {
         return lines;
     }
 
-    public List<String> getToolTips(Faction faction) {
+    public List<String> getToolTips(IFaction faction) {
         List<String> lines = new ArrayList<>();
         for (String s : FactionsPlugin.getInstance().getConfig().getStringList("tooltips.list")) {
             lines.add(ChatColor.translateAlternateColorCodes('&', replaceFactionTags(s, faction)));
@@ -156,11 +155,7 @@ public abstract class FCommand {
         return lines;
     }
 
-    public String replaceFPlayerTags(String s, FPlayer player) {
-        if (s.contains("{balance}")) {
-            String balance = Econ.isSetup() ? Econ.getFriendlyBalance(player) : "no balance";
-            s = s.replace("{balance}", balance);
-        }
+    public String replaceFPlayerTags(String s, IFactionPlayer player) {
         if (s.contains("{lastSeen}")) {
             String humanized = DurationFormatUtils.formatDurationWords(System.currentTimeMillis() - player.getLastLoginTime(), true, true) + " ago";
             String lastSeen = player.isOnline() ? ChatColor.GREEN + "Online" : (System.currentTimeMillis() - player.getLastLoginTime() < 432000000 ? ChatColor.YELLOW + humanized : ChatColor.RED + humanized);
@@ -177,7 +172,7 @@ public abstract class FCommand {
         return s;
     }
 
-    public String replaceFactionTags(String s, Faction faction) {
+    public String replaceFactionTags(String s, IFaction faction) {
         if (s.contains("{power}")) {
             s = s.replace("{power}", String.valueOf(faction.getPowerRounded()));
         }
@@ -185,7 +180,7 @@ public abstract class FCommand {
             s = s.replace("{maxPower}", String.valueOf(faction.getPowerMaxRounded()));
         }
         if (s.contains("{leader}")) {
-            FPlayer fLeader = faction.getFPlayerAdmin();
+            IFactionPlayer fLeader = faction.getFPlayerAdmin();
             String leader = fLeader == null ? "Server" : fLeader.getName().substring(0, fLeader.getName().length() > 14 ? 13 : fLeader.getName().length());
             s = s.replace("{leader}", leader);
         }

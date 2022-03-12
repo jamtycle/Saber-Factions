@@ -1,7 +1,7 @@
 package com.massivecraft.factions.discord;
 
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.Factions;
 import com.massivecraft.factions.cmd.CommandContext;
 import com.massivecraft.factions.cmd.CommandRequirements;
@@ -13,8 +13,6 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 //import net.dv8tion.jda.api.events.message.priv.react.PrivateMessageReactionAddEvent;
 import org.bukkit.ChatColor;
-
-import java.util.concurrent.TimeUnit;
 
 public class CmdSetGuild extends FCommand {
 
@@ -42,7 +40,7 @@ public class CmdSetGuild extends FCommand {
     @Override
     public void perform(CommandContext context) {
         String guildId = context.argAsString(0, null);
-        Faction faction = context.argAsFaction(1, context.faction);
+        IFaction faction = context.argAsFaction(1, context.faction);
         JDA jda = Discord.jda;
         if (jda != null) {
             if (!this.waiterAdded) {
@@ -82,7 +80,6 @@ public class CmdSetGuild extends FCommand {
                 }
             } else {
                 faction.setGuildId(null);
-                faction.setWeeWooChannelId(null);
                 faction.setBufferNotifyChannelId(null);
                 faction.setWallNotifyChannelId(null);
                 faction.setFactionChatChannelId(null);

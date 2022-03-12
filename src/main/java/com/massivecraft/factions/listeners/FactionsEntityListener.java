@@ -50,8 +50,8 @@ public class FactionsEntityListener implements Listener {
         }
 
         Player player = (Player) entity;
-        FPlayer fplayer = FPlayers.getInstance().getByPlayer(player);
-        Faction faction = Board.getInstance().getFactionAt(new FLocation(player.getLocation()));
+        IFactionPlayer fplayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
+        IFaction faction = Board.getInstance().getFactionAt(new FLocation(player.getLocation()));
 
         PowerLossEvent powerLossEvent = new PowerLossEvent(faction, fplayer);
         // Check for no power loss conditions
@@ -70,7 +70,7 @@ public class FactionsEntityListener implements Listener {
         } else if ( (Conf.worldsNoPowerLoss.contains(player.getWorld().getName()) && !Conf.useWorldConfigurationsAsWhitelist) || (!Conf.worldsNoPowerLoss.contains(player.getWorld().getName()) && Conf.useWorldConfigurationsAsWhitelist) ) {
             powerLossEvent.setMessage(TL.PLAYER_POWER_NOLOSS_WORLD.toString());
             powerLossEvent.setCancelled(true);
-        } else if (Conf.peacefulMembersDisablePowerLoss && fplayer.hasFaction() && fplayer.getFaction().isPeaceful()) {
+        } else if (Conf.peacefulMembersDisablePowerLoss && fplayer.getHasFaction() && fplayer.getFaction().isPeaceful()) {
             powerLossEvent.setMessage(TL.PLAYER_POWER_NOLOSS_PEACEFUL.toString());
             powerLossEvent.setCancelled(true);
         } else {
@@ -114,8 +114,8 @@ public class FactionsEntityListener implements Listener {
 
                 if (damageee instanceof Player) {
                     if (damager instanceof Player) {
-                        FPlayer fdamager = FPlayers.getInstance().getByPlayer((Player) damager);
-                        FPlayer fdamagee = FPlayers.getInstance().getByPlayer((Player) damageee);
+                        IFactionPlayer fdamager = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damager);
+                        IFactionPlayer fdamagee = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damageee);
                         if ((fdamagee.getRelationTo(fdamager) == Relation.ALLY) ||
                                 (fdamagee.getRelationTo(fdamager) == Relation.TRUCE) ||
                                 (fdamagee.getFaction() == fdamager.getFaction())) {
@@ -128,8 +128,8 @@ public class FactionsEntityListener implements Listener {
                             // this will trigger if the damager is a projectile
                             if (((Projectile) damager).getShooter() instanceof Player) {
                                 Player damagerPlayer = (Player) ((Projectile) damager).getShooter();
-                                FPlayer fdamager = FPlayers.getInstance().getByPlayer(damagerPlayer);
-                                FPlayer fdamagee = FPlayers.getInstance().getByPlayer((Player) damageee);
+                                IFactionPlayer fdamager = FactionPlayersManagerBase.getInstance().getByPlayer(damagerPlayer);
+                                IFactionPlayer fdamagee = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damageee);
                                 Relation relation = fdamager.getRelationTo(fdamagee);
                                 if (relation == Relation.ALLY || relation == Relation.TRUCE ||
                                         fdamager.getFaction() == fdamagee.getFaction()) {
@@ -187,8 +187,7 @@ public class FactionsEntityListener implements Listener {
                         combatList.add(damagee.getUniqueId());
                     }
                     Bukkit.getScheduler().runTaskLater(FactionsPlugin.instance, () -> combatList.remove(damageee.getUniqueId()), 20L * FactionsPlugin.getInstance().getConfig().getInt("ffly.CombatFlyCooldown"));
-                    cancelFFly((Player) damageee);
-                    FPlayer fplayer = FPlayers.getInstance().getByPlayer((Player) damageee);
+                    IFactionPlayer fplayer = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damageee);
                     if (fplayer.isInspectMode()) {
                         fplayer.setInspectMode(false);
                         fplayer.msg(TL.COMMAND_INSPECT_DISABLED_MSG);
@@ -203,8 +202,7 @@ public class FactionsEntityListener implements Listener {
                     Entity finalDamager = damager;
                     Bukkit.getScheduler().runTaskLater(FactionsPlugin.instance, () -> combatList.remove(finalDamager.getUniqueId()), 20L * FactionsPlugin.getInstance().getConfig().getInt("ffly.CombatFlyCooldown"));
 
-                    cancelFFly((Player) damager);
-                    FPlayer fplayer = FPlayers.getInstance().getByPlayer((Player) damager);
+                    IFactionPlayer fplayer = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damager);
                     if (fplayer.isInspectMode()) {
                         fplayer.setInspectMode(false);
                         fplayer.msg(TL.COMMAND_INSPECT_DISABLED_MSG);
@@ -213,19 +211,13 @@ public class FactionsEntityListener implements Listener {
             } else if (Conf.safeZonePreventAllDamageToPlayers && isPlayerInSafeZone(event.getEntity())) {
                 // Players can not take any damage in a Safe Zone
                 event.setCancelled(true);
-            } else if (event.getCause() == EntityDamageEvent.DamageCause.FALL && event.getEntity() instanceof Player) {
-                Player player = (Player) event.getEntity();
-                FPlayer fPlayer = FPlayers.getInstance().getByPlayer(player);
-                if (fPlayer != null && !fPlayer.shouldTakeFallDamage()) {
-                    event.setCancelled(true); // Falling after /f fly
-                }
             }
 
             // entity took generic damage?
             Entity entity = event.getEntity();
             if (entity instanceof Player) {
                 Player player = (Player) entity;
-                FPlayer me = FPlayers.getInstance().getByPlayer(player);
+                IFactionPlayer me = FactionPlayersManagerBase.getInstance().getByPlayer(player);
                 cancelFStuckTeleport(player);
                 if (me.isWarmingUp()) {
                     me.clearWarmup();
@@ -237,27 +229,12 @@ public class FactionsEntityListener implements Listener {
         }
     }
 
-
-    private void cancelFFly(Player player) {
-        if (player == null) {
-            return;
-        }
-
-        FPlayer fPlayer = FPlayers.getInstance().getByPlayer(player);
-        if (fPlayer.isFlying()) {
-            fPlayer.setFlying(false, true);
-            if (fPlayer.isAutoFlying()) {
-                fPlayer.setAutoFlying(false);
-            }
-        }
-    }
-
     public void cancelFStuckTeleport(Player player) {
         if (player == null) return;
 
         UUID uuid = player.getUniqueId();
         if (FactionsPlugin.getInstance().getStuckMap().containsKey(uuid))
-            FPlayers.getInstance().getByPlayer(player).msg(TL.COMMAND_STUCK_CANCELLED);
+            FactionPlayersManagerBase.getInstance().getByPlayer(player).msg(TL.COMMAND_STUCK_CANCELLED);
         FactionsPlugin.getInstance().getStuckMap().remove(uuid);
     }
 
@@ -307,7 +284,7 @@ public class FactionsEntityListener implements Listener {
     }
 
     private boolean checkExplosionForBlock(Entity boomer, Block block) {
-        Faction faction = Board.getInstance().getFactionAt(new FLocation(block.getLocation()));
+        IFaction faction = Board.getInstance().getFactionAt(new FLocation(block.getLocation()));
 
         if (faction.noExplosionsInTerritory() || (faction.isPeaceful() && Conf.peacefulTerritoryDisableBoom))
             return false;
@@ -362,7 +339,7 @@ public class FactionsEntityListener implements Listener {
 
         if (thrower instanceof Player) {
             Player player = (Player) thrower;
-            FPlayer fPlayer = FPlayers.getInstance().getByPlayer(player);
+            IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer(player);
             if (fPlayer.getFaction().isPeaceful()) {
                 event.setCancelled(true);
                 return;
@@ -390,9 +367,9 @@ public class FactionsEntityListener implements Listener {
         Entity damager = sub.getDamager();
         Entity damagee = sub.getEntity();
         if (!(damagee instanceof Player)) return true;
-        FPlayer defender = FPlayers.getInstance().getByPlayer((Player) damagee);
+        IFactionPlayer defender = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damagee);
         if (damager instanceof Player) {
-            FPlayer attacker = FPlayers.getInstance().getByPlayer((Player) damager);
+            IFactionPlayer attacker = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damager);
             if (defender == null || defender.getPlayer() == null) return true;
             if (attacker.getFaction() == defender.getFaction() && attacker.getFaction().isNormal() && defender.getFaction().isNormal()) {
                 if (attacker.hasFriendlyFire() && defender.hasFriendlyFire()) return true;
@@ -406,7 +383,7 @@ public class FactionsEntityListener implements Listener {
             }
         }
         Location defenderLoc = defender.getPlayer().getLocation();
-        Faction defLocFaction = Board.getInstance().getFactionAt(new FLocation(defenderLoc));
+        IFaction defLocFaction = Board.getInstance().getFactionAt(new FLocation(defenderLoc));
         // for damage caused by projectiles, getDamager() returns the projectile... what we need to know is the source
         if (damager instanceof Projectile) {
             Projectile projectile = (Projectile) damager;
@@ -420,7 +397,7 @@ public class FactionsEntityListener implements Listener {
         if (defLocFaction.noPvPInTerritory()) {
             if (damager instanceof Player) {
                 if (notify) {
-                    FPlayer attacker = FPlayers.getInstance().getByPlayer((Player) damager);
+                    IFactionPlayer attacker = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damager);
                     attacker.msg(TL.PLAYER_CANTHURT, (defLocFaction.isSafeZone() ? TL.REGION_SAFEZONE.toString() : TL.REGION_PEACEFUL.toString()));
                 }
                 return false;
@@ -430,7 +407,7 @@ public class FactionsEntityListener implements Listener {
 
         if (!(damager instanceof Player)) return true;
 
-        FPlayer attacker = FPlayers.getInstance().getByPlayer((Player) damager);
+        IFactionPlayer attacker = FactionPlayersManagerBase.getInstance().getByPlayer((Player) damager);
 
         if (attacker == null || attacker.getPlayer() == null) return true;
 
@@ -447,12 +424,13 @@ public class FactionsEntityListener implements Listener {
 
         if (Conf.playersWhoBypassAllProtection.contains(attacker.getName())) return true;
 
-        if (attacker.hasLoginPvpDisabled()) {
-            if (notify) attacker.msg(TL.PLAYER_PVP_LOGIN, Conf.noPVPDamageToOthersForXSecondsAfterLogin);
-            return false;
-        }
+        //This is a good implementation but is bad implemented. Gotta work on that.
+//        if (attacker.hasLoginPvpDisabled()) {
+//            if (notify) attacker.msg(TL.PLAYER_PVP_LOGIN, Conf.noPVPDamageToOthersForXSecondsAfterLogin);
+//            return false;
+//        }
 
-        Faction locFaction = Board.getInstance().getFactionAt(new FLocation(attacker));
+        IFaction locFaction = Board.getInstance().getFactionAt(new FLocation(attacker));
 
         // so we know from above that the defender isn't in a safezone... what about the attacker, sneaky dog that he might be?
         if (locFaction.noPvPInTerritory()) {
@@ -464,8 +442,8 @@ public class FactionsEntityListener implements Listener {
         if (locFaction.isWarZone() && Conf.warZoneFriendlyFire) return true;
         if ( (Conf.worldsIgnorePvP.contains(defenderLoc.getWorld().getName()) && !Conf.useWorldConfigurationsAsWhitelist) || (!Conf.worldsIgnorePvP.contains(defenderLoc.getWorld().getName()) && Conf.useWorldConfigurationsAsWhitelist) ) return true;
 
-        Faction defendFaction = defender.getFaction();
-        Faction attackFaction = attacker.getFaction();
+        IFaction defendFaction = defender.getFaction();
+        IFaction attackFaction = attacker.getFaction();
 
         if (attackFaction.isWilderness() && Conf.disablePVPForFactionlessPlayers) {
             if (notify) attacker.msg(TL.PLAYER_PVP_REQUIREFACTION);
@@ -494,7 +472,7 @@ public class FactionsEntityListener implements Listener {
         }
 
         // Players without faction may be hurt anywhere
-        if (!defender.hasFaction()) return true;
+        if (!defender.getHasFaction()) return true;
 
         // You can never hurt faction members or allies
         if (relation.isMember() || relation.isAlly()) {
@@ -547,7 +525,7 @@ public class FactionsEntityListener implements Listener {
 
         if (event.getCause() == RemoveCause.EXPLOSION) {
             Location loc = event.getEntity().getLocation();
-            Faction faction = Board.getInstance().getFactionAt(new FLocation(loc));
+            IFaction faction = Board.getInstance().getFactionAt(new FLocation(loc));
             if (faction.noExplosionsInTerritory()) {
                 // faction is peaceful and has explosions set to disabled
                 event.setCancelled(true);
@@ -615,7 +593,7 @@ public class FactionsEntityListener implements Listener {
         if (entity.getType() == EntityType.ENDERMAN) {
             if (stopEndermanBlockManipulation(loc)) e.setCancelled(true);
         } else if (entity.getType() == EntityType.WITHER) {
-            Faction faction = Board.getInstance().getFactionAt(new FLocation(loc));
+            IFaction faction = Board.getInstance().getFactionAt(new FLocation(loc));
             // it's a bit crude just using fireball protection, but I'd rather not add in a whole new set of xxxBlockWitherExplosion or whatever
             if ((faction.isWilderness() && Conf.wildernessBlockFireballs && ((!Conf.worldsNoWildernessProtection.contains(loc.getWorld().getName()) && !Conf.useWorldConfigurationsAsWhitelist) || (Conf.worldsNoWildernessProtection.contains(loc.getWorld().getName()) && Conf.useWorldConfigurationsAsWhitelist)) ) ||
                     (faction.isNormal() && (faction.hasPlayersOnline() ? Conf.territoryBlockFireballs : Conf.territoryBlockFireballsWhenOffline)) ||
@@ -664,8 +642,8 @@ public class FactionsEntityListener implements Listener {
             if (e.getEntity() instanceof Player) {
                 Player victim = (Player) e.getEntity();
                 Player attacker = (Player) e.getDamager();
-                FPlayer fvictim = FPlayers.getInstance().getByPlayer(victim);
-                FPlayer fattacker = FPlayers.getInstance().getByPlayer(attacker);
+                IFactionPlayer fvictim = FactionPlayersManagerBase.getInstance().getByPlayer(victim);
+                IFactionPlayer fattacker = FactionPlayersManagerBase.getInstance().getByPlayer(attacker);
                 if (fattacker.getRelationTo(fvictim) == Relation.TRUCE) {
                     fattacker.msg(TL.PLAYER_PVP_CANTHURT, fvictim.describeTo(fattacker));
                     e.setCancelled(true);
@@ -683,18 +661,13 @@ public class FactionsEntityListener implements Listener {
                 if (arrow.getShooter() instanceof Player) {
                     Player damager = (Player) ((Projectile) e.getDamager()).getShooter();
                     Player victim = (Player) e.getEntity();
-                    FPlayer fdamager = FPlayers.getInstance().getByPlayer(damager);
-                    FPlayer fvictim = FPlayers.getInstance().getByPlayer(victim);
+                    IFactionPlayer fdamager = FactionPlayersManagerBase.getInstance().getByPlayer(damager);
+                    IFactionPlayer fvictim = FactionPlayersManagerBase.getInstance().getByPlayer(victim);
                     if (damager == victim) return;
                     if (fdamager == fvictim) return;
                     if (fvictim.getRelationTo(fdamager) == Relation.TRUCE) {
                         fdamager.msg(TL.PLAYER_PVP_CANTHURT, fvictim.describeTo(fdamager));
                         e.setCancelled(true);
-                    }
-                    if (fvictim.getRelationTo(fdamager) == Relation.ENEMY) {
-                        if (fvictim.isFlying()) {
-                            fvictim.setFlying(false, true);
-                        }
                     }
                 }
             }
@@ -727,7 +700,7 @@ public class FactionsEntityListener implements Listener {
 
 
         FLocation fLoc = new FLocation(loc);
-        Faction claimFaction = Board.getInstance().getFactionAt(fLoc);
+        IFaction claimFaction = Board.getInstance().getFactionAt(fLoc);
 
         if (claimFaction.isWilderness())
             return Conf.wildernessDenyEndermanBlocks;

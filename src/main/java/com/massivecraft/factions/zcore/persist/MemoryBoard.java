@@ -3,18 +3,11 @@ package com.massivecraft.factions.zcore.persist;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.massivecraft.factions.*;
-import com.massivecraft.factions.cmd.FCmdRoot;
-import com.massivecraft.factions.struct.Permission;
-import com.massivecraft.factions.struct.Relation;
-import com.massivecraft.factions.util.AsciiCompass;
-import com.massivecraft.factions.util.CC;
-import com.massivecraft.factions.util.FastChunk;
 import com.massivecraft.factions.util.Logger;
 import com.massivecraft.factions.zcore.util.TL;
 import com.massivecraft.factions.zcore.util.TagReplacer;
 import com.massivecraft.factions.zcore.util.TagUtil;
 import mkremins.fanciful.FancyMessage;
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -38,7 +31,7 @@ public abstract class MemoryBoard extends Board {
         return flocationIds.get(flocation);
     }
 
-    public Faction getFactionAt(FLocation flocation) {
+    public IFaction getFactionAt(FLocation flocation) {
         return Factions.getInstance().getFactionById(getIdAt(flocation));
     }
 
@@ -52,19 +45,15 @@ public abstract class MemoryBoard extends Board {
         flocationIds.put(flocation, id);
     }
 
-    public void setFactionAt(Faction faction, FLocation flocation) {
+    public void setFactionAt(IFaction faction, FLocation flocation) {
         setIdAt(faction.getId(), flocation);
     }
 
     public void removeAt(FLocation flocation) {
-        Faction faction = getFactionAt(flocation);
-        faction.getWarps().values().removeIf(lazyLocation -> flocation.isInChunk(lazyLocation.getLocation()));
+        IFaction faction = getFactionAt(flocation);
         for (Entity entity : flocation.getChunk().getEntities()) {
             if (entity instanceof Player) {
-                FPlayer fPlayer = FPlayers.getInstance().getByPlayer((Player) entity);
-                if (!fPlayer.isAdminBypassing() && fPlayer.isFlying()) {
-                    fPlayer.setFlying(false);
-                }
+                IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByPlayer((Player) entity);
                 if (fPlayer.isWarmingUp()) {
                     fPlayer.clearWarmup();
                     fPlayer.msg(TL.WARMUPS_CANCELLED);
@@ -85,23 +74,22 @@ public abstract class MemoryBoard extends Board {
         return locs;
     }
 
-    public Set<FLocation> getAllClaims(Faction faction) {
+    public Set<FLocation> getAllClaims(IFaction faction) {
         return getAllClaims(faction.getId());
     }
 
     // not to be confused with claims, ownership referring to further member-specific ownership of a claim
     public void clearOwnershipAt(FLocation flocation) {
-        Faction faction = getFactionAt(flocation);
+        IFaction faction = getFactionAt(flocation);
         if (faction != null && faction.isNormal()) {
             faction.clearClaimOwnership(flocation);
         }
     }
 
     public void unclaimAll(String factionId) {
-        Faction faction = Factions.getInstance().getFactionById(factionId);
+        IFaction faction = Factions.getInstance().getFactionById(factionId);
         if (faction != null && faction.isNormal()) {
             faction.clearAllClaimOwnership();
-            faction.clearWarps();
             faction.clearSpawnerChunks();
         }
         clean(factionId);
@@ -122,7 +110,7 @@ public abstract class MemoryBoard extends Board {
     // Is this coord NOT completely surrounded by coords claimed by the same faction?
     // Simpler: Is there any nearby coord with a faction other than the faction here?
     public boolean isBorderLocation(FLocation flocation) {
-        Faction faction = getFactionAt(flocation);
+        IFaction faction = getFactionAt(flocation);
         FLocation a = flocation.getRelative(1, 0);
         FLocation b = flocation.getRelative(-1, 0);
         FLocation c = flocation.getRelative(0, 1);
@@ -131,7 +119,7 @@ public abstract class MemoryBoard extends Board {
     }
 
     // Is this coord connected to any coord claimed by the specified faction?
-    public boolean isConnectedLocation(FLocation flocation, Faction faction) {
+    public boolean isConnectedLocation(FLocation flocation, IFaction faction) {
         FLocation a = flocation.getRelative(1, 0);
         FLocation b = flocation.getRelative(-1, 0);
         FLocation c = flocation.getRelative(0, 1);
@@ -148,7 +136,7 @@ public abstract class MemoryBoard extends Board {
      * @param radius    - chunk radius to check.
      * @return true if another Faction is within the radius, otherwise false.
      */
-    public boolean hasFactionWithin(FLocation flocation, Faction faction, int radius) {
+    public boolean hasFactionWithin(FLocation flocation, IFaction faction, int radius) {
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
                 if (x == 0 && z == 0) {
@@ -156,7 +144,7 @@ public abstract class MemoryBoard extends Board {
                 }
 
                 FLocation relative = flocation.getRelative(x, z);
-                Faction other = getFactionAt(relative);
+                IFaction other = getFactionAt(relative);
 
                 if (other.isNormal() && other != faction) {
                     return true;
@@ -190,11 +178,11 @@ public abstract class MemoryBoard extends Board {
     // Coord count
     //----------------------------------------------//
 
-    public int getFactionCoordCount(Faction faction) {
+    public int getFactionCoordCount(IFaction faction) {
         return getFactionCoordCount(faction.getId());
     }
 
-    public int getFactionCoordCountInWorld(Faction faction, String worldName) {
+    public int getFactionCoordCountInWorld(IFaction faction, String worldName) {
         String factionId = faction.getId();
         int ret = 0;
         for (Entry<FLocation, String> entry : flocationIds.entrySet()) {
@@ -205,115 +193,16 @@ public abstract class MemoryBoard extends Board {
         return ret;
     }
 
-    /**
-     * The map is relative to a coord and a faction north is in the direction of decreasing x east is in the direction
-     * of decreasing z
-     */
-    public ArrayList<FancyMessage> getMap(FPlayer fplayer, FLocation flocation, double inDegrees) {
-        Faction faction = fplayer.getFaction();
-        ArrayList<FancyMessage> ret = new ArrayList<>();
-        Faction factionLoc = getFactionAt(flocation);
-        ret.add(new FancyMessage(ChatColor.DARK_GRAY + FactionsPlugin.getInstance().txt.titleize("(" + flocation.getCoordString() + ") " + factionLoc.getTag(fplayer))));
-        int buffer = FactionsPlugin.getInstance().getConfig().getInt("world-border.buffer", 0);
-
-
-        // Get the compass
-        List<String> asciiCompass = AsciiCompass.getAsciiCompass(inDegrees, ChatColor.DARK_GREEN, FactionsPlugin.getInstance().txt.parse("<gray>"));
-
-        //Still use the player defined mapHeight, but if a server owner decides /f map command needs a nerf,
-        //Use the smaller config value to allow for mapHeight updating without rewriting the entire players.json file
-        int mapHeight = fplayer.getMapHeight();
-        if (mapHeight > Conf.mapHeight) mapHeight = Conf.mapHeight;
-
-        int halfWidth = Conf.mapWidth / 2;
-        int halfHeight = mapHeight / 2;
-        FLocation topLeft = flocation.getRelative(-halfWidth, -halfHeight);
-        int width = halfWidth * 2 + 1;
-        int height = halfHeight * 2 + 1;
-
-        if (Conf.showMapFactionKey) {
-            height--;
-        }
-
-        Map<String, Character> fList = new HashMap<>();
-        int chrIdx = 0;
-
-        // For each row
-        for (int dz = 0; dz < height; dz++) {
-            // Draw and add that row
-            FancyMessage row = new FancyMessage("");
-
-            if (dz < 3) {
-                row.then(asciiCompass.get(dz));
-            }
-            for (int dx = (dz < 3 ? 6 : 3); dx < width; dx++) {
-                if (dx == halfWidth && dz == halfHeight) {
-                    row.then("+").color(ChatColor.AQUA).tooltip(TL.CLAIM_YOUAREHERE.toString());
-                } else {
-                    FLocation flocationHere = topLeft.getRelative(dx, dz);
-                    FastChunk fastChunk = new FastChunk(flocationHere);
-                    Faction factionHere = getFactionAt(flocationHere);
-                    Relation relation = fplayer.getRelationTo(factionHere);
-                    if (flocationHere.isOutsideWorldBorder(buffer)) {
-                        row.then("-").color(ChatColor.BLACK).tooltip(TL.CLAIM_MAP_OUTSIDEBORDER.toString());
-                    } else if (factionHere.isWilderness()) {
-                        row.then("-").color(Conf.colorWilderness);
-                        // Lol someone didnt add the x and z making it claim the wrong position Can i copyright this xD
-                        if (fplayer.getPlayer().hasPermission(Permission.CLAIMAT.node)) {
-                            if (Conf.enableClickToClaim) {
-                                row.tooltip(TL.CLAIM_CLICK_TO_CLAIM.format(dx + topLeft.getX(), dz + topLeft.getZ()))
-                                        .command(String.format("/f claimat %s %d %d", flocation.getWorldName(), dx + topLeft.getX(), dz + topLeft.getZ()));
-                            }
-                        }
-                    } else if (factionHere.isSafeZone()) {
-                        row.then("+").color(Conf.colorSafezone).tooltip(oneLineToolTip(factionHere, fplayer));
-                    } else if (factionHere.isWarZone()) {
-                        row.then("+").color(Conf.colorWar).tooltip(oneLineToolTip(factionHere, fplayer));
-                    } else if (factionHere == faction || factionHere == factionLoc || relation.isAtLeast(Relation.ALLY) ||
-                            (Conf.showNeutralFactionsOnMap && relation.equals(Relation.NEUTRAL)) ||
-                            (Conf.showEnemyFactionsOnMap && relation.equals(Relation.ENEMY)) ||
-                            (Conf.showTrucesFactionsOnMap && relation.equals(Relation.TRUCE))) {
-                        if (!fList.containsKey(factionHere.getTag())) {
-                            fList.put(factionHere.getTag(), Conf.mapKeyChrs[Math.min(chrIdx++, Conf.mapKeyChrs.length - 1)]);
-                        }
-                        char tag = fList.get(factionHere.getTag());
-
-                        //row.then(String.valueOf(tag)).color(factionHere.getColorTo(faction)).tooltip(getToolTip(factionHere, fplayer));
-                        //changed out with a performance friendly one line tooltip :D
-                        if (factionHere.getSpawnerChunks().contains(fastChunk) && Conf.userSpawnerChunkSystem) {
-                            row.then(String.valueOf(tag)).color(Conf.spawnerChunkColor).tooltip(oneLineToolTip(factionHere, fplayer) + CC.Reset + CC.Blue + " " + Conf.spawnerChunkString);
-                        } else {
-                            row.then(String.valueOf(tag)).color(factionHere.getColorTo(faction)).tooltip(oneLineToolTip(factionHere, fplayer));
-                        }            } else {
-                        row.then("-").color(ChatColor.GRAY);
-                    }
-                }
-            }
-            ret.add(row);
-        }
-
-        // Add the faction key
-        if (Conf.showMapFactionKey) {
-            FancyMessage fRow = new FancyMessage("");
-            for (String key : fList.keySet()) {
-                fRow.then(String.format("%s: %s ", fList.get(key), key)).color(ChatColor.GRAY);
-            }
-            ret.add(fRow);
-        }
-
-        return ret;
-    }
-
     //----------------------------------------------//
     // Map generation
     //----------------------------------------------//
 
-    private List<String> oneLineToolTip(Faction faction, FPlayer to) {
+    private List<String> oneLineToolTip(IFaction faction, IFactionPlayer to) {
         return Collections.singletonList(faction.describeTo(to));
     }
 
     @SuppressWarnings("unused")
-    private List<String> getToolTip(Faction faction, FPlayer to) {
+    private List<String> getToolTip(IFaction faction, IFactionPlayer to) {
         List<String> ret = new ArrayList<>();
         List<String> show = FactionsPlugin.getInstance().getConfig().getStringList("map");
 
@@ -406,11 +295,8 @@ public abstract class MemoryBoard extends Board {
 
         public void removeFaction(String factionId) {
             Collection<FLocation> fLocations = factionToLandMap.removeAll(factionId);
-            for (FPlayer fPlayer : FPlayers.getInstance().getOnlinePlayers()) {
+            for (IFactionPlayer fPlayer : FactionPlayersManagerBase.getInstance().getOnlinePlayers()) {
                 if (fLocations.contains(fPlayer.getLastStoodAt())) {
-                    if (FCmdRoot.instance.fFlyEnabled && !fPlayer.isAdminBypassing() && fPlayer.isFlying()) {
-                        fPlayer.setFlying(false);
-                    }
                     if (fPlayer.isWarmingUp()) {
                         fPlayer.clearWarmup();
                         fPlayer.msg(TL.WARMUPS_CANCELLED);

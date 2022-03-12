@@ -17,16 +17,16 @@ public class FTeamWrapper {
      * @author FactionsUUID Team - Modified By CmdrKittens
      */
 
-    private static final Map<Faction, FTeamWrapper> wrappers = new HashMap<>();
+    private static final Map<IFaction, FTeamWrapper> wrappers = new HashMap<>();
     private static final List<FScoreboard> tracking = new ArrayList<>();
-    private static final Set<Faction> updating = new HashSet<>();
+    private static final Set<IFaction> updating = new HashSet<>();
     private static int factionTeamPtr;
     private final Map<FScoreboard, Team> teams = new HashMap<>();
     private final String teamName;
-    private final Faction faction;
+    private final IFaction faction;
     private final Set<OfflinePlayer> members = new HashSet<>();
 
-    private FTeamWrapper(Faction faction) {
+    private FTeamWrapper(IFaction faction) {
         this.teamName = "faction_" + (factionTeamPtr++);
         this.faction = faction;
 
@@ -35,7 +35,7 @@ public class FTeamWrapper {
         }
     }
 
-    public static void applyUpdatesLater(final Faction faction) {
+    public static void applyUpdatesLater(final IFaction faction) {
         if (!FScoreboard.isSupportedByServer()) return;
         if (faction.isWilderness()) return;
         if (!FactionsPlugin.getInstance().getConfig().getBoolean("scoreboard.default-prefixes", false)
@@ -50,7 +50,7 @@ public class FTeamWrapper {
         }
     }
 
-    public static void applyUpdates(Faction faction) {
+    public static void applyUpdates(IFaction faction) {
         if (!FScoreboard.isSupportedByServer()) return;
 
         if (faction.isWilderness()) return;
@@ -64,7 +64,7 @@ public class FTeamWrapper {
         if (updating.contains(faction)) return;
 
         FTeamWrapper wrapper = wrappers.get(faction);
-        Set<FPlayer> factionMembers = faction.getFPlayers();
+        Set<IFactionPlayer> factionMembers = faction.getFPlayers();
 
         if (wrapper != null && Factions.getInstance().getFactionById(faction.getId()) == null) {
             // Faction was disbanded
@@ -79,13 +79,13 @@ public class FTeamWrapper {
         }
 
         for (OfflinePlayer player : wrapper.getPlayers()) {
-            if (!player.isOnline() || !factionMembers.contains(FPlayers.getInstance().getByOfflinePlayer(player))) {
+            if (!player.isOnline() || !factionMembers.contains(FactionPlayersManagerBase.getInstance().getByOfflinePlayer(player))) {
                 // Player is offline or no longer in faction
                 wrapper.removePlayer(player);
             }
         }
 
-        for (FPlayer fmember : factionMembers) {
+        for (IFactionPlayer fmember : factionMembers) {
             if (!fmember.isOnline()) continue;
 
             // Scoreboard might not have player; add him/her
@@ -94,7 +94,7 @@ public class FTeamWrapper {
         wrapper.updatePrefixes();
     }
 
-    public static void updatePrefixes(Faction faction) {
+    public static void updatePrefixes(IFaction faction) {
         if (!FScoreboard.isSupportedByServer()) return;
 
         if (!wrappers.containsKey(faction)) {
@@ -140,7 +140,7 @@ public class FTeamWrapper {
 
     private void updatePrefix(FScoreboard fboard) {
         if (FactionsPlugin.getInstance().getConfig().getBoolean("scoreboard.default-prefixes", false)) {
-            FPlayer fplayer = fboard.getFPlayer();
+            IFactionPlayer fplayer = fboard.getFPlayer();
             Team team = teams.get(fboard);
             boolean focused = false;
 
@@ -149,7 +149,7 @@ public class FTeamWrapper {
             }
 
             if ((FactionsPlugin.getInstance().getConfig().getBoolean("ffocus.Enabled")) && (fplayer.getFaction() != null) && (fplayer.getFaction().getFocused() != null)) {
-                for (FPlayer fp : faction.getFPlayersWhereOnline(true)) {
+                for (IFactionPlayer fp : faction.getFPlayersWhereOnline(true)) {
                     if (fplayer.getFaction().getFocused().equalsIgnoreCase(fp.getName())) {
                         team.setPrefix(ChatColor.translateAlternateColorCodes('&', FactionsPlugin.getInstance().getConfig().getString("ffocus.Prefix", "&7»&b")));
                         focused = true;

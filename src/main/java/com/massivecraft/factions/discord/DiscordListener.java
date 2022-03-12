@@ -74,7 +74,7 @@ public class DiscordListener extends ListenerAdapter {
             return;
         }
         if (Discord.waitingLink.containsKey(i)) {
-            FPlayer f = Discord.waitingLink.get(i);
+            IFactionPlayer f = Discord.waitingLink.get(i);
             f.setDiscordSetup(true);
             f.setDiscordUserID(e.getAuthor().getId());
             e.getChannel().sendMessage(TL.DISCORD_LINK_SUCCESS.toString()).queue();
@@ -109,18 +109,12 @@ public class DiscordListener extends ListenerAdapter {
                 this.setWallNotifyChannel(event);
             } else if (content.startsWith(prefix + "setbuffernotifychannel") || content.startsWith(prefix + "sbnf")) {
                 this.setBufferNotifyChannel(event);
-            } else if (content.startsWith(prefix + "setweewoochannel")) {
-                this.setWeewooChannel(event);
             } else if (content.startsWith(prefix + "setnotifyformat")) {
                 this.setNotifyFormat(event, content, prefix);
-            } else if (content.startsWith(prefix + "setweewooformat")) {
-                this.setWeewooFormat(event, content, prefix);
             } else if (content.startsWith(prefix + "setmemberrole")) {
                 this.setMemberRole(event, content, prefix);
             } else if (content.startsWith(prefix + "checkleaderboard") || content.startsWith(prefix + "cl")) {
                 this.checkLeaderboard(event);
-            } else if (content.startsWith(prefix + "weewoo")) {
-                this.weewoo(event, content, prefix);
             } else if (content.startsWith(prefix + "settings")) {
                 this.settings(event);
             }
@@ -131,12 +125,12 @@ public class DiscordListener extends ListenerAdapter {
         }
     }
 
-    private Faction getFaction(Guild guild) {
+    private IFaction getFaction(Guild guild) {
         return Factions.getInstance().getAllFactions().stream().filter(faction -> guild.getId().equals(faction.getGuildId())).findAny().orElse(null);
     }
 
-    private Faction getFactionWithWarning(TextChannel textChannel) {
-        Faction faction = this.getFaction(textChannel.getGuild());
+    private IFaction getFactionWithWarning(TextChannel textChannel) {
+        IFaction faction = this.getFaction(textChannel.getGuild());
         if (faction == null)
             textChannel.sendMessage((":x: This guild isn't linked to a faction, use `/f setguild " + textChannel.getGuild().getId() + "` in game")).queue();
         return faction;
@@ -148,13 +142,13 @@ public class DiscordListener extends ListenerAdapter {
         return !can;
     }
 
-    private boolean canAccessRole(Faction faction, Member member) {
+    private boolean canAccessRole(IFaction faction, Member member) {
         if (member.hasPermission(Permission.MANAGE_SERVER)) return true;
         Role role = member.getGuild().getRoleById(faction.getMemberRoleId());
         return role != null && member.getRoles().stream().anyMatch(r -> r.getPosition() >= role.getPosition());
     }
 
-    private boolean cantAccessRoleWithWarning(TextChannel textChannel, Faction faction, Member member) {
+    private boolean cantAccessRoleWithWarning(TextChannel textChannel, IFaction faction, Member member) {
         boolean can = this.canAccessRole(faction, member);
         if (!can) textChannel.sendMessage(":x: You don't have a faction member role").queue();
         return !can;
@@ -216,13 +210,13 @@ public class DiscordListener extends ListenerAdapter {
             return;
         }
         String[] args = content.split(" ");
-        Faction faction = Factions.getInstance().getByTag(args[1]);
+        IFaction faction = Factions.getInstance().getByTag(args[1]);
         if (faction == null) {
             event.getChannel().sendMessage(":x: Faction not found").queue();
             return;
         }
         EmbedBuilder embedBuilder = new EmbedBuilder().setColor(Color.MAGENTA).setTitle("Faction Stats").setAuthor(ChatColor.stripColor(faction.getTag())).addField("Description", faction.getDescription(), false).addField("Players Online", String.valueOf(faction.getOnlinePlayers().size()), true).addField("Total players", String.valueOf(faction.getFPlayers().size()), true).addField("Alts", String.valueOf(faction.getAltPlayers().size()), true).addField("Land", String.valueOf(faction.getLandRounded()), true).addField("Power", faction.getPowerRounded() + "/" + faction.getPowerMaxRounded(), true);
-        Faction guildFaction = this.getFaction(event.getGuild());
+        IFaction guildFaction = this.getFaction(event.getGuild());
         if (guildFaction != null && guildFaction.getId().equals(faction.getId()) && this.canAccessRole(guildFaction, event.getMember())) {
             embedBuilder.addField("Kills", String.valueOf(faction.getKills()), true).addField("Points", String.valueOf(faction.getPoints()), true).addField("Deaths", String.valueOf(faction.getDeaths()), true);
         }
@@ -236,11 +230,11 @@ public class DiscordListener extends ListenerAdapter {
         }
         String[] args = content.split(" ");
         OfflinePlayer offlinePlayer = this.plugin.getServer().getOfflinePlayer(args[1]);
-        FPlayer fPlayer = FPlayers.getInstance().getByOfflinePlayer(offlinePlayer);
+        IFactionPlayer fPlayer = FactionPlayersManagerBase.getInstance().getByOfflinePlayer(offlinePlayer);
         String role = fPlayer.getRole().toString();
         role = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
         EmbedBuilder embedBuilder = new EmbedBuilder().setColor(Color.MAGENTA).setTitle("Player Stats").setAuthor(offlinePlayer.getName(), null, FactionsPlugin.getInstance().getFileManager().getDiscord().fetchString("Discord.Bot.avatarUrl").replace("%uuid%", offlinePlayer.getUniqueId().toString())).addField("Balance", this.decimalFormat.format(this.plugin.getEcon().getBalance(offlinePlayer)), false).addField("Faction", ChatColor.stripColor(fPlayer.getFaction().getTag()), true).addField("Faction Role", role, true).addField("Power", fPlayer.getPower() + "/" + fPlayer.getPowerMax(), true).addField("Online", offlinePlayer.isOnline() ? "Yes" : "No", true);
-        Faction faction = this.getFaction(event.getGuild());
+        IFaction faction = this.getFaction(event.getGuild());
         if (faction != null && fPlayer.getFactionId().equals(faction.getId())) {
             embedBuilder.addField("Wall checks", String.valueOf(faction.getPlayerWallCheckCount().getOrDefault(offlinePlayer.getUniqueId(), 0)), true).addField("Buffer checks", String.valueOf(faction.getPlayerBufferCheckCount().getOrDefault(offlinePlayer.getUniqueId(), 0)), true).addField("Kills", String.valueOf(fPlayer.getKills()), true).addField("Deaths", String.valueOf(fPlayer.getDeaths()), true);
         }
@@ -265,7 +259,7 @@ public class DiscordListener extends ListenerAdapter {
 
 
     private void setFChatChannel(GuildMessageReceivedEvent event) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessPermissionWithWarning(event.getChannel(), event.getMember())) return;
         List<TextChannel> mentionedChannels = event.getMessage().getMentionedChannels();
@@ -284,7 +278,7 @@ public class DiscordListener extends ListenerAdapter {
     }
 
     private void setWallNotifyChannel(GuildMessageReceivedEvent event) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessPermissionWithWarning(event.getChannel(), event.getMember())) return;
         List<TextChannel> mentionedChannels = event.getMessage().getMentionedChannels();
@@ -303,7 +297,7 @@ public class DiscordListener extends ListenerAdapter {
     }
 
     private void setBufferNotifyChannel(GuildMessageReceivedEvent event) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessPermissionWithWarning(event.getChannel(), event.getMember())) return;
         List<TextChannel> mentionedChannels = event.getMessage().getMentionedChannels();
@@ -321,30 +315,8 @@ public class DiscordListener extends ListenerAdapter {
         }
     }
 
-    private void setWeewooChannel(GuildMessageReceivedEvent event) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
-        if (faction == null) return;
-        if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
-            event.getChannel().sendMessage(":x: You need to have the Manage Server permission to do that").queue();
-            return;
-        }
-        List<TextChannel> mentionedChannels = event.getMessage().getMentionedChannels();
-        if (mentionedChannels.isEmpty()) {
-            faction.setWeeWooChannelId(null);
-            event.getChannel().sendMessage("Cleared weewoo channel").queue();
-        } else {
-            TextChannel textChannel = mentionedChannels.get(0);
-            if (!event.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE)) {
-                event.getChannel().sendMessage((":x: Missing read/write permission in " + textChannel.getAsMention())).queue();
-                return;
-            }
-            faction.setWeeWooChannelId(textChannel.getId());
-            event.getChannel().sendMessage(("New weewoo channel set to " + textChannel.getAsMention())).queue();
-        }
-    }
-
     private void setNotifyFormat(GuildMessageReceivedEvent event, String content, String prefix) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessPermissionWithWarning(event.getChannel(), event.getMember())) return;
         if (!content.contains(" ")) {
@@ -363,7 +335,7 @@ public class DiscordListener extends ListenerAdapter {
     }
 
     private void setWeewooFormat(GuildMessageReceivedEvent event, String content, String prefix) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessPermissionWithWarning(event.getChannel(), event.getMember())) return;
         if (!content.contains(" ")) {
@@ -377,12 +349,11 @@ public class DiscordListener extends ListenerAdapter {
             event.getChannel().sendMessage(":x: The weewoo format may not be longer than 1000 characters").queue();
             return;
         }
-        faction.setWeeWooFormat(format);
         event.getChannel().sendMessage(("New weewoo format set to `" + format + "`")).queue();
     }
 
     private void setMemberRole(GuildMessageReceivedEvent event, String content, String prefix) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessPermissionWithWarning(event.getChannel(), event.getMember())) return;
         List<String> split = new ArrayList<>(Arrays.asList(content.split(" ")));
@@ -410,7 +381,7 @@ public class DiscordListener extends ListenerAdapter {
     }
 
     private void checkLeaderboard(GuildMessageReceivedEvent event) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessRoleWithWarning(event.getChannel(), faction, event.getMember())) return;
 
@@ -436,61 +407,15 @@ public class DiscordListener extends ListenerAdapter {
         event.getChannel().sendMessage(embedBuilder.setDescription(stringBuilder.toString()).build()).queue();
     }
 
-    private void weewoo(GuildMessageReceivedEvent event, String content, String prefix) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
-        if (faction == null) return;
-        if (cantAccessRoleWithWarning(event.getChannel(), faction, event.getMember())) return;
-        if (!content.contains(" ")) {
-            event.getChannel().sendMessage((":x: Usage, `" + prefix + "weewoo <start/stop>`")).queue();
-            return;
-        }
-        List<String> arguments = new ArrayList<>(Arrays.asList(content.split(" ")));
-        boolean weeWoo = faction.isWeeWoo();
-        if (arguments.get(1).equalsIgnoreCase("start")) {
-            if (weeWoo) {
-                event.getChannel().sendMessage(TL.WEEWOO_ALREADY_STARTED_DISCORD.toString()).queue();
-                return;
-            }
-            faction.setWeeWoo(true);
-            event.getMessage().addReaction("\u2705").queue();
-            faction.msg(TL.COMMAND_WEEWOO_STARTED, event.getAuthor().getAsTag());
-            String discordChannelId = faction.getWeeWooChannelId();
-            if (discordChannelId != null && !discordChannelId.isEmpty()) {
-                TextChannel textChannel = event.getJDA().getTextChannelById(discordChannelId);
-                if (textChannel == null) return;
-                textChannel.sendMessage(TL.WEEWOO_STARTED_DISCORD.format(event.getAuthor().getAsTag())).queue();
-            }
-        } else if (arguments.get(1).equalsIgnoreCase("stop")) {
-            if (!weeWoo) {
-                event.getChannel().sendMessage(TL.WEEWOO_ALREADY_STOPPED_DISCORD.toString()).queue();
-                return;
-            }
-            faction.setWeeWoo(false);
-            event.getMessage().addReaction("\u2705").queue();
-            faction.msg(TL.COMMAND_WEEWOO_STOPPED, event.getAuthor().getAsTag());
-            String discordChannelId = faction.getWeeWooChannelId();
-            if (discordChannelId != null && !discordChannelId.isEmpty()) {
-                TextChannel textChannel = event.getJDA().getTextChannelById(discordChannelId);
-                if (textChannel == null) return;
-                textChannel.sendMessage(TL.WEEWOO_STOPPED_DISCORD.format(event.getAuthor().getAsTag())).queue();
-            }
-        } else {
-            event.getChannel().sendMessage(":x: Usage, `.weewoo <start/stop>`").queue();
-        }
-    }
-
     private void settings(GuildMessageReceivedEvent event) {
-        Faction faction = this.getFactionWithWarning(event.getChannel());
+        IFaction faction = this.getFactionWithWarning(event.getChannel());
         if (faction == null) return;
         if (cantAccessRoleWithWarning(event.getChannel(), faction, event.getMember())) return;
         int wallCheck = faction.getWallCheckMinutes();
         int bufferCheck = faction.getBufferCheckMinutes();
         String wallChannel = faction.getWallNotifyChannelId();
         String bufferChannel = faction.getBufferNotifyChannelId();
-        String weeWooChannel = faction.getWeeWooChannelId();
         String fChatChannel = faction.getFactionChatChannelId();
-        MessageEmbed embed = new EmbedBuilder().setTitle("Settings").setColor(Color.MAGENTA).addField("WeeWoo channel", (weeWooChannel != null && !weeWooChannel.isEmpty()) ? ("<#" + weeWooChannel + ">") : "None", true).addField("Wall check channel", (wallChannel != null && !wallChannel.isEmpty()) ? ("<#" + wallChannel + ">") : "None", true).addField("Buffer check channel", (bufferChannel != null && !bufferChannel.isEmpty()) ? ("<#" + bufferChannel + ">") : "None", true).addField("Faction Chat channel", (fChatChannel != null && !fChatChannel.isEmpty()) ? ("<#" + fChatChannel + ">") : "None", true).addField("Wall check notifications", (wallCheck <= 0) ? "Offline" : (wallCheck + " Minutes"), true).addField("Buffer check notifications", (bufferCheck <= 0) ? "Offline" : (bufferCheck + " Minutes"), true).addField("Notify format", "`" + faction.getNotifyFormat() + "`", false).addField("WeeWoo format", "`" + faction.getWeeWooFormat() + "`", false).build();
-        event.getChannel().sendMessage(embed).queue();
     }
 }
 

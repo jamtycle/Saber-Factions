@@ -4,7 +4,6 @@ import com.earth2me.essentials.IEssentials;
 import com.earth2me.essentials.Teleport;
 import com.earth2me.essentials.Trade;
 import com.massivecraft.factions.Conf;
-import com.massivecraft.factions.iface.EconomyParticipator;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -41,14 +40,6 @@ public class Essentials {
 
     public static boolean isVanished(Player player) {
         return essentials != null && player != null && essentials.getUser(player).isVanished();
-    }
-
-    public static boolean isOverBalCap(EconomyParticipator participator, double amount) {
-        if (essentials == null) {
-            return false;
-        }
-
-        return amount > essentials.getSettings().getMaxMoney().doubleValue();
     }
 
     public static Plugin getEssentials() {

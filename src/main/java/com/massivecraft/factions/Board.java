@@ -1,10 +1,9 @@
 package com.massivecraft.factions;
 
+import com.massivecraft.factions.mysql.Faction;
 import com.massivecraft.factions.zcore.persist.json.JSONBoard;
-import mkremins.fanciful.FancyMessage;
 import org.bukkit.World;
 
-import java.util.List;
 import java.util.Set;
 
 
@@ -26,7 +25,7 @@ public abstract class Board {
     //----------------------------------------------//
     // Get and Set
     //----------------------------------------------//
-    public abstract String getIdAt(FLocation flocation);
+    public abstract Integer getIdAt(FLocation flocation);
 
     public abstract Faction getFactionAt(FLocation flocation);
 
@@ -66,21 +65,12 @@ public abstract class Board {
     // Coord count
     //----------------------------------------------//
 
-    public abstract int getFactionCoordCount(String factionId);
+    public abstract int getFactionCoordCount(Integer factionId);
 
     public abstract int getFactionCoordCount(Faction faction);
 
     public abstract int getFactionCoordCountInWorld(Faction faction, String worldName);
 
-    //----------------------------------------------//
-    // Map generation
-    //----------------------------------------------//
-
-    /*
-     * The map is relative to a coord and a faction north is in the direction of decreasing x east is in the direction
-     * of decreasing z
-     */
-    public abstract List<FancyMessage> getMap(FPlayer fPlayer, FLocation flocation, double inDegrees);
 
     public abstract void forceSave();
 

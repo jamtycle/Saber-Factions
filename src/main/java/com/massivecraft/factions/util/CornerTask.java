@@ -1,7 +1,7 @@
 package com.massivecraft.factions.util;
 
 import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.zcore.util.TL;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -9,11 +9,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.List;
 
 public class CornerTask extends BukkitRunnable {
-    private FPlayer fPlayer;
+    private IFactionPlayer fPlayer;
     private List<FLocation> surrounding;
     private int amount;
 
-    public CornerTask(FPlayer fPlayer, List<FLocation> surrounding) {
+    public CornerTask(IFactionPlayer fPlayer, List<FLocation> surrounding) {
         this.amount = 0;
         this.fPlayer = fPlayer;
         this.surrounding = surrounding;

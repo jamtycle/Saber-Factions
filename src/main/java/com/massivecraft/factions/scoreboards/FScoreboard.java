@@ -1,8 +1,9 @@
 package com.massivecraft.factions.scoreboards;
 
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.IFactionPlayer;
+import com.massivecraft.factions.FactionPlayersManagerBase;
 import com.massivecraft.factions.FactionsPlugin;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -18,17 +19,36 @@ public class FScoreboard {
      * @author FactionsUUID Team - Modified By CmdrKittens
      */
 
-    private static final Map<FPlayer, FScoreboard> fscoreboards = new HashMap<>();
+    private static final Map<IFactionPlayer, FScoreboard> fscoreboards = new HashMap<>();
 
     private final Scoreboard scoreboard;
-    private final FPlayer fplayer;
+    @Deprecated
+    private final IFactionPlayer fplayer;
+    private final FactionPlayer faction_player;
     private final BufferedObjective bufferedObjective;
     private FSidebarProvider defaultProvider;
     private FSidebarProvider temporaryProvider;
     private boolean removed = false;
 
-    private FScoreboard(FPlayer fplayer) {
+    // TODO: Remove this constructor
+    private FScoreboard(IFactionPlayer fplayer) {
         this.fplayer = fplayer;
+        this.faction_player = null;
+
+        if (isSupportedByServer()) {
+            this.scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+            this.bufferedObjective = new BufferedObjective(scoreboard);
+
+            fplayer.getPlayer().setScoreboard(scoreboard);
+        } else {
+            this.scoreboard = null;
+            this.bufferedObjective = null;
+        }
+    }
+
+    private FScoreboard(FactionPlayer fplayer) {
+        this.fplayer = null;
+        this.faction_player = fplayer;
 
         if (isSupportedByServer()) {
             this.scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
@@ -48,17 +68,17 @@ public class FScoreboard {
         return Bukkit.getScoreboardManager() != null;
     }
 
-    public static void init(FPlayer fplayer) {
+    public static void init(IFactionPlayer fplayer) {
         FScoreboard fboard = new FScoreboard(fplayer);
         fscoreboards.put(fplayer, fboard);
 
-        if (fplayer.hasFaction()) {
+        if (fplayer.getHasFaction()) {
             FTeamWrapper.applyUpdates(fplayer.getFaction());
         }
         FTeamWrapper.track(fboard);
     }
 
-    public static void remove(FPlayer fplayer, Player player) {
+    public static void remove(IFactionPlayer fplayer, Player player) {
         FScoreboard fboard = fscoreboards.remove(fplayer);
 
         if (fboard != null) {
@@ -72,15 +92,19 @@ public class FScoreboard {
         }
     }
 
-    public static FScoreboard get(FPlayer fplayer) {
+    public static FScoreboard get(IFactionPlayer fplayer) {
+        return fscoreboards.get(fplayer);
+    }
+
+    public static FScoreboard get(FactionPlayer fplayer) {
         return fscoreboards.get(fplayer);
     }
 
     public static FScoreboard get(Player player) {
-        return fscoreboards.get(FPlayers.getInstance().getByPlayer(player));
+        return fscoreboards.get(FactionPlayersManagerBase.getInstance().getByPlayer(player));
     }
 
-    protected FPlayer getFPlayer() {
+    protected IFactionPlayer getFPlayer() {
         return fplayer;
     }
 

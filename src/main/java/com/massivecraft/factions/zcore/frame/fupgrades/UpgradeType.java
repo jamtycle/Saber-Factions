@@ -1,7 +1,7 @@
 package com.massivecraft.factions.zcore.frame.fupgrades;
 
 import com.cryptomorin.xseries.XMaterial;
-import com.massivecraft.factions.Faction;
+import com.massivecraft.factions.IFaction;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.util.Placeholder;
@@ -25,18 +25,14 @@ public enum UpgradeType {
 
     CHEST("Chest", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Chest.Max-Level")),
     FALL_DAMAGE("Fall-Damage", 1),
-    SPAWNER("Spawners", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Spawners.Max-Level")),
     EXP("EXP", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.EXP.Max-Level")),
     CROP("Crops", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Crops.Max-Level")),
     POWER("Power", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Power.Max-Level")),
     REDSTONE("Redstone", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Redstone.Max-Level")),
     MEMBERS("Members", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Members.Max-Level")),
-    TNT("TNT", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.TNT.Max-Level")),
-    WARP("Warps", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Warps.Max-Level")),
     DAMAGEINCREASE("DamageIncrease", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.DamageIncrease.Max-Level")),
     DAMAGEDECREASE("DamageReduct", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.DamageReduct.Max-Level")),
-    SPAWNERCHUNKS("SpawnerChunks", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.SpawnerChunks.Max-Level")),
-    REINFORCEDARMOR("Armor", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.Armor.Max-Level"));
+    SPAWNERCHUNKS("SpawnerChunks", FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getInt("fupgrades.MainMenu.SpawnerChunks.Max-Level"));
 
     private String id;
     private int maxLevel;
@@ -59,7 +55,7 @@ public enum UpgradeType {
         return this.maxLevel;
     }
 
-    public ItemStack buildAsset(Faction f) {
+    public ItemStack buildAsset(IFaction f) {
         ConfigurationSection config = FactionsPlugin.getInstance().getFileManager().getUpgrades().getConfig().getConfigurationSection("fupgrades.MainMenu." + this.id + ".DisplayItem");
         ItemStack item = XMaterial.matchXMaterial(config.getString("Type")).get().parseItem();
         int level = f.getUpgrade(this);

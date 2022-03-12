@@ -1,8 +1,7 @@
 package com.massivecraft.factions.tag;
 
-import com.massivecraft.factions.FPlayer;
 import com.massivecraft.factions.FactionsPlugin;
-import com.massivecraft.factions.integration.Econ;
+import com.massivecraft.factions.mysql.FactionPlayer;
 import com.massivecraft.factions.zcore.util.TL;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.bukkit.Bukkit;
@@ -16,7 +15,6 @@ public enum PlayerTag implements Tag {
     /**
      * @author FactionsUUID Team - Modified By CmdrKittens
      */
-
     GROUP("{group}", (fp) -> {
         if (fp.isOnline()) {
             return FactionsPlugin.getInstance().getPrimaryGroup(fp.getPlayer());
@@ -24,17 +22,10 @@ public enum PlayerTag implements Tag {
             return "";
         }
     }),
-    LAST_SEEN("{lastSeen}", (fp) -> {
-        String humanized = DurationFormatUtils.formatDurationWords(System.currentTimeMillis() - fp.getLastLoginTime(), true, true) + TL.COMMAND_STATUS_AGOSUFFIX;
-        return fp.isOnline() ? ChatColor.GREEN + TL.COMMAND_STATUS_ONLINE.toString() : (System.currentTimeMillis() - fp.getLastLoginTime() < 432000000 ? ChatColor.YELLOW + humanized : ChatColor.RED + humanized);
-    }),
-    PLAYER_BALANCE("{balance}", (fp) -> Econ.isSetup() ? Econ.getFriendlyBalance(fp) : (Tag.isMinimalShow() ? null : TL.ECON_OFF.format("balance"))),
-    PLAYER_POWER("{player-power}", (fp) -> String.valueOf(fp.getPowerRounded())),
-    ROLE("{player-role}", FPlayer::getRolePrefix),
-    PLAYER_MAXPOWER("{player-maxpower}", (fp) -> String.valueOf(fp.getPowerMaxRounded())),
+    ROLE("{player-role}", FactionPlayer::getRolePrefix),
     PLAYER_KILLS("{player-kills}", (fp) -> String.valueOf(fp.getKills())),
-    PLAYER_DEATHS("{player-deaths}", (fp) -> String.valueOf(fp.getDeaths())),
-    PLAYER_NAME("{name}", FPlayer::getName),
+//    PLAYER_DEATHS("{player-deaths}", (fp) -> String.valueOf(fp.getDeaths())),
+    PLAYER_NAME("{name}", FactionPlayer::getPlayer_name),
     TOTAL_ONLINE_VISIBLE("total-online-visible", (fp) -> {
         if (fp == null) {
             return String.valueOf(Bukkit.getOnlinePlayers().size());
@@ -51,14 +42,14 @@ public enum PlayerTag implements Tag {
     ;
 
     private final String tag;
-    private final Function<FPlayer, String> function;
+    private final Function<FactionPlayer, String> function;
 
-    PlayerTag(String tag, Function<FPlayer, String> function) {
+    PlayerTag(String tag, Function<FactionPlayer, String> function) {
         this.tag = tag;
         this.function = function;
     }
 
-    public static String parse(String text, FPlayer player) {
+    public static String parse(String text, FactionPlayer player) {
         for (PlayerTag tag : VALUES) {
             text = tag.replace(text, player);
         }
@@ -75,7 +66,7 @@ public enum PlayerTag implements Tag {
         return test != null && test.contains(this.tag);
     }
 
-    public String replace(String text, FPlayer player) {
+    public String replace(String text, FactionPlayer player) {
         if (!this.foundInString(text)) {
             return text;
         }

@@ -1,7 +1,7 @@
 package com.massivecraft.factions.zcore.fperms;
 
 import com.cryptomorin.xseries.XMaterial;
-import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.IFactionPlayer;
 import com.massivecraft.factions.FactionsPlugin;
 import com.massivecraft.factions.util.CC;
 import com.massivecraft.factions.util.Placeholder;
@@ -19,12 +19,8 @@ public enum PermissableAction {
      * @author FactionsUUID Team - Modified By CmdrKittens
      */
 
-    BAN("ban"),
     BUILD("build"),
     DESTROY("destroy"),
-    DRAIN("drain"),
-    FROST_WALK("frostwalk"),
-    PAIN_BUILD("painbuild"),
     DOOR("door"),
     BUTTON("button"),
     LEVER("lever"),
@@ -32,22 +28,10 @@ public enum PermissableAction {
     INVITE("invite"),
     KICK("kick"),
     ITEM("items"), // generic for most items
-    SETHOME("sethome"),
     TERRITORY("territory"),
-    HOME("home"),
-    DISBAND("disband"),
     PROMOTE("promote"),
-    SETWARP("setwarp"),
-    WARP("warp"),
-    FLY("fly"),
     VAULT("vault"),
-    TNTBANK("tntbank"),
-    TNTFILL("tntfill"),
-    WITHDRAW("withdraw"),
-    CHEST("chest"),
-    AUDIT("audit"),
-    CHECK("check"),
-    SPAWNER("spawner");
+    CHEST("chest");
 
     private String name;
 
@@ -107,7 +91,7 @@ public enum PermissableAction {
         return name;
     }
 
-    public ItemStack buildAsset(FPlayer fme, Permissable perm) {
+    public ItemStack buildAsset(IFactionPlayer fme, Permissable perm) {
         ConfigurationSection section = FactionsPlugin.getInstance().getFileManager().getFperms().getConfig().getConfigurationSection("fperm-gui.action");
         ItemStack item = XMaterial.matchXMaterial(section.getString("Materials." + this.name)).get().parseItem();
         ItemMeta meta = item.getItemMeta();
